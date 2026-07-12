@@ -12,9 +12,9 @@ export const getActivityLogs = async (req, res, next) => {
         orderBy: { created_at: 'desc' },
         include: { user: true, asset: true }
       }),
-      prisma.assetAllocation.findMany({
+      prisma.allocation.findMany({
         take: 15,
-        orderBy: { allocated_at: 'desc' },
+        orderBy: { created_at: 'desc' },
         include: { user: true, asset: true }
       }),
       prisma.maintenanceRequest.findMany({
@@ -64,7 +64,7 @@ export const getActivityLogs = async (req, res, next) => {
     allocations.forEach(al => {
       logs.push({
         id: `log-alloc-${al.id}`,
-        actor_id: al.user_id,
+        actor_id: al.assigned_to_user_id || al.user_id,
         actor_name: al.user?.name || al.user?.email || 'Employee',
         action: 'Asset Allocated',
         entity_type: 'allocation',
@@ -73,7 +73,7 @@ export const getActivityLogs = async (req, res, next) => {
           asset: al.asset?.name || 'Asset',
           tag: al.asset?.asset_tag
         },
-        created_at: al.allocated_at || al.created_at || new Date()
+        created_at: al.created_at || new Date()
       });
     });
 

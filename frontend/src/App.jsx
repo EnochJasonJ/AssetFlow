@@ -1,34 +1,28 @@
 // App.jsx — Router setup
-// Hari owns this file — all teammates register their routes here
+// Hari owns this file — all teammates register their routes here.
+// DO NOT duplicate imports. One import per page, one route per path.
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 // ─── Auth pages (Hari) ────────────────────────────────────────────────────────
-import LoginPage from './pages/auth/LoginPage'
-import SignupPage from './pages/auth/SignupPage'
+import LoginPage        from './pages/auth/LoginPage'
+import SignupPage       from './pages/auth/SignupPage'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 
-// ─── Hari's pages ─────────────────────────────────────────────────────────────
+// ─── Hari — Screens 2, 3 ─────────────────────────────────────────────────────
 import DashboardPage from './pages/dashboard/DashboardPage'
-import OrgSetupPage from './pages/org/OrgSetupPage'
+import OrgSetupPage  from './pages/org/OrgSetupPage'
 
+// ─── Devipriya — Screens 4, 6, 9, 10 ─────────────────────────────────────────
 import AssetDirectoryPage from './pages/assets/AssetDirectoryPage'
-import BookingPage from './pages/bookings/BookingPage'
-import ReportsPage from './pages/reports/ReportsPage'
-import ActivityLogsPage from './pages/logs/ActivityLogsPage'
-// ─── Devipriya's pages ────────────────────────────────────────────────────────
-import AssetDirectoryPage from './pages/assets/AssetDirectoryPage'
-// import BookingPage from './pages/bookings/BookingPage'       // Devipriya — Screen 6
-// import ReportsPage from './pages/reports/ReportsPage'         // Devipriya — Screen 9
-// import ActivityLogsPage from './pages/logs/ActivityLogsPage'  // Devipriya — Screen 10
+import BookingPage        from './pages/bookings/BookingPage'
+import ReportsPage        from './pages/reports/ReportsPage'
+import ActivityLogsPage   from './pages/logs/ActivityLogsPage'
 
-// ─── Abinivas' pages ──────────────────────────────────────────────────────────
-import AllocationPage from './pages/allocations/AllocationPage'
+// ─── Abinivas — Screens 5, 7, 8 ──────────────────────────────────────────────
+import AllocationPage  from './pages/allocations/AllocationPage'
 import MaintenancePage from './pages/maintenance/MaintenancePage'
-import AuditPage from './pages/audit/AuditPage'
-
-// ─── Fallback placeholder ─────────────────────────────────────────────────────
-import PlaceholderPage from './pages/PlaceholderPage'
+import AuditPage       from './pages/audit/AuditPage'
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 function PrivateRoute({ children }) {
@@ -55,34 +49,31 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public */}
+
+          {/* ── Public ── */}
           <Route path="/login"          element={<LoginPage />} />
           <Route path="/signup"         element={<SignupPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Hari — Screens 1, 2, 3 */}
+          {/* ── Hari — Screens 1, 2, 3 ── */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/org"       element={<PrivateRoute><AdminRoute><OrgSetupPage /></AdminRoute></PrivateRoute>} />
 
-          {/* Protected — Devipriya (placeholders until she builds them) */}
-          <Route path="/assets"      element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
-          <Route path="/bookings"    element={<PrivateRoute><BookingPage /></PrivateRoute>} />
-          <Route path="/reports"     element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
-          <Route path="/logs"        element={<PrivateRoute><ActivityLogsPage /></PrivateRoute>} />
-          {/* Devipriya — Screens 4, 6, 9, 10 */}
-          <Route path="/assets"  element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
-          <Route path="/bookings" element={<PrivateRoute><PlaceholderPage name="Resource Booking" owner="Devipriya" screen={6} /></PrivateRoute>} />
-          <Route path="/reports"  element={<PrivateRoute><PlaceholderPage name="Reports & Analytics" owner="Devipriya" screen={9} /></PrivateRoute>} />
-          <Route path="/logs"     element={<PrivateRoute><PlaceholderPage name="Activity Logs" owner="Devipriya" screen={10} /></PrivateRoute>} />
+          {/* ── Devipriya — Screens 4, 6, 9, 10 ── */}
+          <Route path="/assets"   element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
+          <Route path="/bookings" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
+          <Route path="/reports"  element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
+          <Route path="/logs"     element={<PrivateRoute><ActivityLogsPage /></PrivateRoute>} />
 
-          {/* Abinivas — Screens 5, 7, 8 */}
+          {/* ── Abinivas — Screens 5, 7, 8 ── */}
           <Route path="/allocations" element={<PrivateRoute><AllocationPage /></PrivateRoute>} />
           <Route path="/maintenance" element={<PrivateRoute><MaintenancePage /></PrivateRoute>} />
           <Route path="/audit"       element={<PrivateRoute><AuditPage /></PrivateRoute>} />
 
-          {/* Default */}
+          {/* ── Default ── */}
           <Route path="/"  element={<Navigate to="/dashboard" replace />} />
           <Route path="*"  element={<Navigate to="/dashboard" replace />} />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

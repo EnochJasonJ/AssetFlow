@@ -11,7 +11,7 @@ import SignupPage from './pages/auth/SignupPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import OrgSetupPage from './pages/org/OrgSetupPage'
 
-// Placeholders for teammates' pages (replace when they build them)
+import AssetDirectoryPage from './pages/assets/AssetDirectoryPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 // Route guard — redirects to /login if not authenticated
@@ -44,7 +44,7 @@ export default function App() {
           <Route path="/org"       element={<PrivateRoute><AdminRoute><OrgSetupPage /></AdminRoute></PrivateRoute>} />
 
           {/* Protected — Devipriya (placeholders until she builds them) */}
-          <Route path="/assets"      element={<PrivateRoute><PlaceholderPage name="Asset Directory" owner="Devipriya" screen={4} /></PrivateRoute>} />
+          <Route path="/assets"      element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
           <Route path="/bookings"    element={<PrivateRoute><PlaceholderPage name="Resource Booking" owner="Devipriya" screen={6} /></PrivateRoute>} />
           <Route path="/reports"     element={<PrivateRoute><PlaceholderPage name="Reports & Analytics" owner="Devipriya" screen={9} /></PrivateRoute>} />
           <Route path="/logs"        element={<PrivateRoute><PlaceholderPage name="Activity Logs" owner="Devipriya" screen={10} /></PrivateRoute>} />

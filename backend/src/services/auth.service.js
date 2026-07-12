@@ -1,52 +1,85 @@
-import { supabase } from '../lib/supabase.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../utils/errors.js';
 
-export const signupUser = async ({ name, email, password }) => {
-  // 1. Create user in Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { name }
-    }
-  });
+const JWT_SECRET = process.env.JWT_SECRET || 'assetflow-enterprise-secret-jwt-key-2026';
+const JWT_EXPIRES_IN = '7d';
 
-  if (authError) {
-    throw new AppError(authError.message, 400);
+const signToken = (user) => {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+};
+
+export const signupUser = async ({ name, email, password }) => {
+  if (!email || !password) {
+    throw new AppError('Please provide email and password', 400);
   }
 
-  // 2. Create user in our Prisma Database
+  // Check if email already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (existingUser) {
+    throw new AppError('An account with this email already exists', 409);
+  }
+
+  // Hash password
+  const password_hash = await bcrypt.hash(password, 10);
+
+  // Bootstrap rule: First registered user becomes ADMIN, all subsequent users become EMPLOYEE
+  const userCount = await prisma.user.count();
+  const assignedRole = userCount === 0 ? 'ADMIN' : 'EMPLOYEE';
+
   const user = await prisma.user.create({
     data: {
-      auth_id: authData.user.id,
-      name,
+      name: name || email.split('@')[0],
       email,
-      role: 'EMPLOYEE', // Default role per requirements
+      password_hash,
+      role: assignedRole,
       status: 'ACTIVE'
     }
   });
 
-  return { user, session: authData.session };
+  const token = signToken(user);
+
+  return {
+    user,
+    session: { access_token: token }
+  };
 };
 
 export const loginUser = async ({ email, password }) => {
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (authError) {
-    throw new AppError('Incorrect email or password', 401);
+  if (!email || !password) {
+    throw new AppError('Please provide email and password', 400);
   }
 
   const user = await prisma.user.findUnique({
-    where: { auth_id: authData.user.id }
+    where: { email }
   });
 
-  if (!user) {
-    throw new AppError('User not found in database', 404);
+  if (!user || !user.password_hash) {
+    throw new AppError('Incorrect email or password', 401);
   }
 
-  return { user, session: authData.session };
+  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+  if (!isPasswordValid) {
+    throw new AppError('Incorrect email or password', 401);
+  }
+
+  if (user.status !== 'ACTIVE') {
+    throw new AppError('This account has been deactivated.', 403);
+  }
+
+  const token = signToken(user);
+
+  return {
+    user,
+    session: { access_token: token }
+  };
 };

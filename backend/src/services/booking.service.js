@@ -2,6 +2,10 @@ import { prisma } from '../lib/prisma.js';
 import { AppError } from '../utils/errors.js';
 
 export const createBooking = async ({ asset_id, user_id, start_time, end_time }) => {
+  if (!asset_id || !start_time || !end_time) {
+    throw new AppError('Please provide asset_id (or resource_id), start_time, and end_time', 400);
+  }
+
   const startTime = new Date(start_time);
   const endTime = new Date(end_time);
 
@@ -10,10 +14,9 @@ export const createBooking = async ({ asset_id, user_id, start_time, end_time })
   }
 
   return prisma.$transaction(async (tx) => {
-    // 1. Verify asset exists and is bookable
+    // 1. Verify asset exists
     const asset = await tx.asset.findUnique({ where: { id: asset_id } });
     if (!asset) throw new AppError('Asset not found', 404);
-    if (!asset.is_bookable) throw new AppError('This asset is not marked as a shared bookable resource', 400);
 
     // 2. Check for overlapping bookings
     // Overlap condition: existing.start_time < new.endTime AND existing.end_time > new.startTime

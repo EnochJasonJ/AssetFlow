@@ -12,9 +12,29 @@ const generateAssetTag = async () => {
 export const registerAsset = async (data) => {
   const asset_tag = await generateAssetTag();
   
+  const {
+    name,
+    category_id,
+    serial_number,
+    acquisition_date,
+    acquisition_cost,
+    condition = 'NEW',
+    location,
+    photo_url,
+    is_bookable = false
+  } = data;
+
   return prisma.asset.create({
     data: {
-      ...data,
+      name,
+      category_id,
+      serial_number,
+      acquisition_date: acquisition_date ? new Date(acquisition_date) : undefined,
+      acquisition_cost: acquisition_cost !== undefined ? Number(acquisition_cost) : undefined,
+      condition,
+      location,
+      photo_url,
+      is_bookable: Boolean(is_bookable),
       asset_tag,
       status: 'AVAILABLE'
     },
@@ -63,11 +83,14 @@ export const getAssetHistory = async (id) => {
 // ALLOCATIONS & TRANSFERS
 // ==========================================
 
-export const allocateAsset = async (asset_id, user_id, expected_return_date) => {
+export const allocateAsset = async (asset_id, user_id, expected_return_date, condition_notes) => {
+  if (!asset_id || !user_id) {
+    throw new AppError('Please provide both asset_id and assigned_to_user_id (or assigned_to)', 400);
+  }
+
   // Transaction to prevent double-allocation
   return prisma.$transaction(async (tx) => {
     // 1. Check if asset exists and is available
-    // We use a query that acts like a lock if possible, or just standard check
     const asset = await tx.asset.findUnique({
       where: { id: asset_id }
     });
@@ -81,7 +104,8 @@ export const allocateAsset = async (asset_id, user_id, expected_return_date) => 
       data: {
         asset_id,
         assigned_to_user_id: user_id,
-        expected_return_date
+        expected_return_date,
+        condition_notes
       }
     });
 
@@ -124,10 +148,16 @@ export const returnAsset = async (allocation_id, condition_notes) => {
 };
 
 export const requestTransfer = async (asset_id, requested_by_user_id, reason) => {
+  if (!asset_id || !requested_by_user_id) {
+    throw new AppError('Please provide asset_id and requested_by_user_id (or to_user_id)', 400);
+  }
+
   const asset = await prisma.asset.findUnique({ where: { id: asset_id } });
   
   if (!asset) throw new AppError('Asset not found', 404);
-  if (asset.status !== 'ALLOCATED') throw new AppError('Can only request transfer for allocated assets', 400);
+  if (asset.status !== 'ALLOCATED' && asset.status !== 'AVAILABLE') {
+    throw new AppError('Can only request transfer for AVAILABLE or ALLOCATED assets', 400);
+  }
 
   return prisma.transferRequest.create({
     data: {

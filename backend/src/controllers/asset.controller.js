@@ -42,12 +42,15 @@ export const getAssetHistory = async (req, res, next) => {
 
 export const allocateAsset = async (req, res, next) => {
   try {
-    const { asset_id, assigned_to_user_id, expected_return_date } = req.body;
+    const asset_id = req.body.asset_id || req.body.assetId;
+    const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assigned_to || req.body.user_id || req.body.userId;
+    const expected_return_date = req.body.expected_return_date;
+    const condition_notes = req.body.condition_notes || req.body.notes;
     
-    // We should parse expected_return_date if provided
+    // Parse expected_return_date if provided
     const parsedDate = expected_return_date ? new Date(expected_return_date) : null;
 
-    const allocation = await assetService.allocateAsset(asset_id, assigned_to_user_id, parsedDate);
+    const allocation = await assetService.allocateAsset(asset_id, assigned_to_user_id, parsedDate, condition_notes);
     res.status(201).json(allocation);
   } catch (err) {
     next(err);
@@ -68,7 +71,10 @@ export const returnAsset = async (req, res, next) => {
 
 export const requestTransfer = async (req, res, next) => {
   try {
-    const { asset_id, requested_by_user_id, reason } = req.body;
+    const asset_id = req.body.asset_id || req.body.assetId;
+    const requested_by_user_id = req.body.requested_by_user_id || req.body.to_user_id || req.body.user_id || req.user?.id;
+    const reason = req.body.reason || req.body.notes;
+
     const transfer = await assetService.requestTransfer(asset_id, requested_by_user_id, reason);
     res.status(201).json(transfer);
   } catch (err) {

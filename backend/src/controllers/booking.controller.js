@@ -2,9 +2,11 @@ import * as bookingService from '../services/booking.service.js';
 
 export const createBooking = async (req, res, next) => {
   try {
-    const { asset_id, start_time, end_time } = req.body;
+    const asset_id = req.body.asset_id || req.body.resource_id || req.body.assetId || req.body.resourceId;
+    const start_time = req.body.start_time || req.body.startTime;
+    const end_time = req.body.end_time || req.body.endTime;
     // Use the authenticated user's ID
-    const user_id = req.user.id;
+    const user_id = req.body.user_id || req.user.id;
 
     const booking = await bookingService.createBooking({
       asset_id,

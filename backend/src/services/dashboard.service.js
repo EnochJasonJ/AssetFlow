@@ -15,7 +15,7 @@ export const getDashboardSummary = async () => {
     prisma.asset.count({ where: { status: 'ALLOCATED' } }),
     prisma.asset.count({ where: { status: 'UNDER_MAINTENANCE' } }),
     prisma.resourceBooking.count({ where: { status: 'ONGOING' } }),
-    prisma.auditCycle.count({ where: { status: 'OPEN' } }),
+    prisma.auditCycle.count({ where: { is_closed: false } }),
     prisma.maintenanceRequest.count({ where: { status: 'PENDING' } })
   ]);
 

@@ -1,6 +1,8 @@
-import { supabase } from '../lib/supabase.js';
+import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/errors.js';
 import { prisma } from '../lib/prisma.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'assetflow-enterprise-secret-jwt-key-2026';
 
 export const protect = async (req, res, next) => {
   try {
@@ -14,16 +16,17 @@ export const protect = async (req, res, next) => {
       return next(new AppError('You are not logged in! Please log in to get access.', 401));
     }
 
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return next(new AppError('The token belonging to this user does no longer exist or is invalid.', 401));
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return next(new AppError('Invalid or expired token. Please log in again.', 401));
     }
 
-    // Fetch our custom user profile from Prisma
+    // Fetch user profile from Prisma
     const currentUser = await prisma.user.findUnique({
-      where: { auth_id: user.id },
+      where: { id: decoded.id },
       include: { department: true }
     });
 
@@ -37,7 +40,6 @@ export const protect = async (req, res, next) => {
 
     // Grant access to protected route
     req.user = currentUser;
-    req.supabaseUser = user;
     
     next();
   } catch (err) {

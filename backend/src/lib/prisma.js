@@ -1,12 +1,27 @@
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 
-// PrismaClient is attached to the `global` object in development to prevent 
-// exhausting your database connection limit.
-// Learn more: https://pris.ly/d/help/next-js-best-practices
+let connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
+// Fix common Supabase connection string mismatch where pooler username (postgres.project_ref)
+// is used against the direct database host (db.project_ref.supabase.co)
+try {
+  const url = new URL(connectionString);
+  if (url.hostname.startsWith('db.') && url.hostname.endsWith('.supabase.co') && url.username.startsWith('postgres.')) {
+    url.username = 'postgres';
+    connectionString = url.toString();
+  }
+} catch (e) {
+  // Use connectionString as-is if URL parsing fails
+}
+
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 
 const globalForPrisma = global;
 
-export const prisma = globalForPrisma.prisma || new PrismaClient();
+export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

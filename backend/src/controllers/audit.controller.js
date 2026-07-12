@@ -2,12 +2,14 @@ import * as auditService from '../services/audit.service.js';
 
 export const createAuditCycle = async (req, res, next) => {
   try {
-    const { title } = req.body;
-    const created_by_user_id = req.user.id;
+    const name = req.body.name || req.body.title;
+    const { department_id, start_date, end_date } = req.body;
 
     const cycle = await auditService.createAuditCycle({
-      title,
-      created_by_user_id
+      name,
+      department_id,
+      start_date,
+      end_date
     });
 
     res.status(201).json(cycle);

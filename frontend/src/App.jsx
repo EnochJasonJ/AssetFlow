@@ -12,6 +12,10 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import OrgSetupPage from './pages/org/OrgSetupPage'
 
+import AssetDirectoryPage from './pages/assets/AssetDirectoryPage'
+import BookingPage from './pages/bookings/BookingPage'
+import ReportsPage from './pages/reports/ReportsPage'
+import ActivityLogsPage from './pages/logs/ActivityLogsPage'
 // ─── Devipriya's pages ────────────────────────────────────────────────────────
 import AssetDirectoryPage from './pages/assets/AssetDirectoryPage'
 // import BookingPage from './pages/bookings/BookingPage'       // Devipriya — Screen 6
@@ -60,6 +64,11 @@ export default function App() {
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/org"       element={<PrivateRoute><AdminRoute><OrgSetupPage /></AdminRoute></PrivateRoute>} />
 
+          {/* Protected — Devipriya (placeholders until she builds them) */}
+          <Route path="/assets"      element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
+          <Route path="/bookings"    element={<PrivateRoute><BookingPage /></PrivateRoute>} />
+          <Route path="/reports"     element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
+          <Route path="/logs"        element={<PrivateRoute><ActivityLogsPage /></PrivateRoute>} />
           {/* Devipriya — Screens 4, 6, 9, 10 */}
           <Route path="/assets"  element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
           <Route path="/bookings" element={<PrivateRoute><PlaceholderPage name="Resource Booking" owner="Devipriya" screen={6} /></PrivateRoute>} />

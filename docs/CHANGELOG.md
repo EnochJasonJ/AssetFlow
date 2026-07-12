@@ -30,6 +30,33 @@ Short paragraph of what was done and why.
 
 ## Entries (Latest First)
 
+### [2026-07-12 13:20] — Devipriya — Frontend Screens 4, 6, 9, 10
+**Type:** Feature
+**Files Changed:**
+- `frontend/src/services/assets.js`
+- `frontend/src/services/bookings.js`
+- `frontend/src/services/reports.js`
+- `frontend/src/services/logs.js`
+- `frontend/src/pages/assets/AssetDirectoryPage.jsx`
+- `frontend/src/pages/assets/AssetDetailPage.jsx`
+- `frontend/src/pages/bookings/BookingPage.jsx`
+- `frontend/src/pages/reports/ReportsPage.jsx`
+- `frontend/src/pages/logs/ActivityLogsPage.jsx`
+- `frontend/src/App.jsx`
+- `docs/MODULE_OWNERS.md`
+
+**Summary:**
+Implemented frontend pages and service layers for Screens 4 (Asset Registration & Directory), 6 (Resource Booking), 9 (Reports & Analytics), and 10 (Activity Logs & Notifications). All pages use shared components and are fully responsive with beautiful visual dark mode graphics. LocalStorage serves as a robust fallback for offline data persistence when Supabase variables are not set.
+
+**Details:**
+- Screen 4: Dynamic searching, category/status/location filtering, custom registration modal with auto-tagging, and a split-tab detailed drawer showing asset info plus allocation and maintenance histories.
+- Screen 6: Bookable resource picker, visual hour-based daily scheduler grid, time overlap checks, and modals to reschedule or cancel slots.
+- Screen 9: Visual analytical reports utilizing responsive SVG line charts, colored bar charts, progress trackers, density heatmaps, and a local CSV file exporter.
+- Screen 10: Notification drawer displaying unread badge count with read/unread toggle controls, and filterable database activity audit logs.
+
+**Open / Decisions Made:**
+- ✅ Registered and configured all Devipriya routes inside App.jsx
+- ✅ Verified 0 errors on roll build
 ### [2026-07-12 12:52] — Hari — [Screen 4] Asset Registration & Directory
 **Type:** Feature
 **Files Changed:**

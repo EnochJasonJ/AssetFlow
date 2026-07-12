@@ -6,7 +6,7 @@ function App() {
   const [count, setCount] = useState(0)
 
   const testSupabase = async () => {
-    const { data, error } = await supabase.from('profiles').select('id').limit(1)
+    const { data, error } = await supabase.from('users').select('id').limit(1)
 
     if (error) {
       console.error('Supabase connection error:', error.message)

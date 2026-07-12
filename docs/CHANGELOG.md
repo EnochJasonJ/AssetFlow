@@ -30,6 +30,49 @@ Short paragraph of what was done and why.
 
 ## Entries (Latest First)
 
+### [2026-07-12 12:03] — Hari — Frontend Foundation: Shared Components + Screens 1, 2, 3
+**Type:** Feature
+**Files Changed:**
+- `frontend/src/index.css` (full design system — dark theme, CSS variables, all shared styles)
+- `frontend/src/App.css` (cleared — all styles now in index.css)
+- `frontend/src/App.jsx` (full router — all 10 routes registered with guards)
+- `frontend/src/context/AuthContext.jsx` (new — Supabase auth session + employee profile/role)
+- `frontend/src/components/shared/AppLayout.jsx` (new)
+- `frontend/src/components/shared/Sidebar.jsx` (new — role-aware nav)
+- `frontend/src/components/shared/NotificationBell.jsx` (new — realtime unread count)
+- `frontend/src/components/shared/StatusBadge.jsx` (new — all status colors)
+- `frontend/src/components/shared/KPICard.jsx` (new)
+- `frontend/src/components/shared/DataTable.jsx` (new — sortable)
+- `frontend/src/components/shared/Modal.jsx` (new)
+- `frontend/src/components/shared/ConfirmDialog.jsx` (new)
+- `frontend/src/components/shared/RoleGuard.jsx` (new)
+- `frontend/src/pages/auth/LoginPage.jsx` (new — Screen 1)
+- `frontend/src/pages/auth/SignupPage.jsx` (new — Screen 1, Employee-only)
+- `frontend/src/pages/dashboard/DashboardPage.jsx` (new — Screen 2)
+- `frontend/src/pages/org/OrgSetupPage.jsx` (new — Screen 3, Admin-only)
+- `frontend/src/pages/PlaceholderPage.jsx` (new — shown for unbuilt screens)
+- `frontend/package.json` + `package-lock.json` (added react-router-dom)
+
+**Summary:**
+Built all of Hari's assigned frontend work: the full design system (dark theme, CSS variables, all component styles), all 9 shared components, AuthContext with Supabase, and all 3 screens (Login/Signup, Dashboard, Org Setup). Also set up the App router with all 10 routes registered — Devipriya and Abinivas' routes show a placeholder page until they build their screens. Build passes with 0 errors.
+
+**Details:**
+- Design system: `#07111f` dark base, Inter font, CSS variables for colors/borders/shadows, all status badge colors, KPI card, table, modal, button, form, sidebar styles
+- AuthContext: reads Supabase session + fetches employee profile (name, role, department_id) from `employees` table
+- Sidebar: role-aware — hides links the user can't access (e.g. Org Setup only shows for Admin)
+- Screen 1 Login: Supabase signInWithPassword, forgot password email flow
+- Screen 1 Signup: Employee-only, no role picker, confirmation screen after success
+- Screen 2 Dashboard: 6 KPI cards (Available, Allocated, Maintenance, Bookings, Transfers, Overdue), overdue alert banner, recent activity feed, quick actions
+- Screen 3 Org Setup (Admin-only): 3 tabs — Departments CRUD (with head + parent hierarchy), Asset Categories CRUD (with JSON custom fields), Employee Directory (search, edit, role promotion — the ONLY place in the app)
+- All 10 routes in App.jsx with PrivateRoute and AdminRoute guards
+
+**Open / Decisions Made:**
+- ✅ react-router-dom added to frontend deps
+- ✅ Build verified: 0 errors, 0 warnings
+- ⏳ Devipriya: replace PlaceholderPage for /assets, /bookings, /reports, /logs in App.jsx when ready
+- ⏳ Abinivas: replace PlaceholderPage for /allocations, /maintenance, /audit in App.jsx when ready
+- ⏳ Jason: `employees` table needed for AuthContext to work (Prisma schema + migration)
+
 ### [2026-07-12 11:41] — Hari — Team Names & UI Re-split
 **Type:** Docs | Planning
 **Files Changed:**

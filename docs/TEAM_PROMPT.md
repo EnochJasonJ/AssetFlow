@@ -162,23 +162,23 @@ Trigger a notification + activity log on:
 
 ---
 
-### UI Screen Split (who builds what)
+### Team & UI Screen Split
 
 > Full details + folder structure: `docs/UI_SPLIT.md`
 
-| Owner | Screens |
-|---|---|
-| **Hari** | Screen 1 (Login/Signup) · Screen 2 (Dashboard) · Screen 4 (Asset Directory) · All shared components |
-| **penguin** | Screen 3 (Org Setup — Departments, Categories, Employee Dir + role promotion) |
-| **Green Clam** | Screen 5 (Asset Allocation & Transfer) |
-| **Calm Mongoose** | Screen 6 (Resource Booking) · Screen 7 (Maintenance Management) |
-| **dhfee'aosh** | Screen 9 (Reports & Analytics) · Screen 10 (Activity Logs & Notifications) |
-| **⚠️ UNASSIGNED** | Screen 8 (Asset Audit) — needs an owner |
+| Name | Role | Screens |
+|---|---|---|
+| **Hari** | Frontend | Screen 1 (Login/Signup) · Screen 2 (Dashboard) · Screen 3 (Org Setup) · All Shared Components |
+| **Devipriya** | Frontend | Screen 4 (Asset Directory) · Screen 6 (Resource Booking) · Screen 9 (Reports) · Screen 10 (Activity Logs) |
+| **Abinivas** | Frontend | Screen 5 (Allocation & Transfer) · Screen 7 (Maintenance) · Screen 8 (Audit) |
+| **Jason** | Backend | All of `/backend` — API, Prisma, Auth, DB |
 
 **Folder structure:** `frontend/src/components/shared/` for shared components, `frontend/src/pages/<module>/` for pages.
 
 **Shared components** (Hari builds, everyone imports from `src/components/shared/`):
 `AppLayout`, `Sidebar`, `StatusBadge`, `KPICard`, `DataTable`, `Modal`, `ConfirmDialog`, `NotificationBell`, `RoleGuard`
+
+**Start order:** Hari builds shared components first → Devipriya & Abinivas can then start in parallel.
 
 ---
 

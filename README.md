@@ -22,21 +22,21 @@ An enterprise-grade, full-stack **Asset Management System (EAMS)** designed to m
 ```mermaid
 graph TD
     subgraph Client [Frontend Layer — React + Vite]
-        UI[App Shell & Layout]
-        Pages[Dashboard | Assets | Allocations | Bookings | Maintenance | Audits | Logs]
-        Services[API Service Layer / Axios & Fetch]
+        UI["App Shell & Layout"]
+        Pages["Pages: Dashboard, Assets, Allocations, Bookings, Maintenance, Audits, Logs"]
+        Services["API Service Layer (Axios / Fetch)"]
     end
 
     subgraph Server [Backend Layer — Node.js + Express]
-        API[Express REST API - /api/v1]
-        Auth[JWT Authentication & Role RBAC]
-        Controllers[Resource Controllers]
-        ORM[Prisma ORM]
+        API["Express REST API (/api/v1)"]
+        Auth["JWT Authentication & RBAC"]
+        Controllers["Resource Controllers"]
+        ORM["Prisma ORM"]
     end
 
     subgraph Data [Persistence Layer — PostgreSQL / Supabase]
-        DB[(PostgreSQL Database)]
-        Realtime[Supabase Realtime / Notifications]
+        DB[("PostgreSQL Database")]
+        Realtime["Supabase Realtime / Notifications"]
     end
 
     UI --> Pages

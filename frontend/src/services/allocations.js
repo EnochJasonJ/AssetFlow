@@ -1,32 +1,36 @@
 /**
  * allocations.js — Service layer for Screen 5: Asset Allocation & Transfer
- *
- * All API calls go to /api/v1/... (backend owned by Jason).
- * Auth token is read from Supabase session and attached as Bearer header.
- * Never put raw fetch calls inside components — always import from here.
+ * Calls /api/v1/... (backend owned by Jason).
+ * Falls back to mock data when backend is not running.
  */
 
 import { supabase } from '../lib/supabase'
 
 const BASE = '/api/v1'
+const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL
 
-/** Get auth header from current Supabase session */
 async function authHeader() {
+  if (DEV_MODE) return { Authorization: 'Bearer dev-token' }
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return {}
   return { Authorization: `Bearer ${session.access_token}` }
 }
 
-/**
- * GET /api/v1/allocations
- * Returns all allocations (active + returned).
- * Overdue flagging is done client-side via expected_return_date < now.
- */
+const MOCK_ALLOCATIONS = [
+  { id: '1', asset_id: 'a1', asset: { name: 'MacBook Pro 14"', asset_tag: 'AF-0001' }, assigned_to_user: { name: 'Devipriya' }, assigned_to_department: null, status: 'Active', allocated_at: new Date(Date.now() - 5 * 86400000).toISOString(), expected_return_date: new Date(Date.now() + 10 * 86400000).toISOString() },
+  { id: '2', asset_id: 'a2', asset: { name: 'Dell Monitor 27"', asset_tag: 'AF-0002' }, assigned_to_user: { name: 'Abinivas' }, assigned_to_department: null, status: 'Active', allocated_at: new Date(Date.now() - 20 * 86400000).toISOString(), expected_return_date: new Date(Date.now() - 5 * 86400000).toISOString() },
+  { id: '3', asset_id: 'a3', asset: { name: 'Standing Desk', asset_tag: 'AF-0003' }, assigned_to_user: null, assigned_to_department: { name: 'Engineering' }, status: 'Returned', allocated_at: new Date(Date.now() - 60 * 86400000).toISOString(), expected_return_date: new Date(Date.now() - 30 * 86400000).toISOString() },
+]
+
+
 export async function getAllocations() {
-  const headers = await authHeader()
-  const res = await fetch(`${BASE}/allocations`, { headers })
-  if (!res.ok) throw new Error(`Failed to fetch allocations: ${res.status}`)
-  return res.json()
+  if (DEV_MODE) return MOCK_ALLOCATIONS
+  try {
+    const headers = await authHeader()
+    const res = await fetch(`${BASE}/allocations`, { headers })
+    if (!res.ok) throw new Error(res.status)
+    return res.json()
+  } catch { return MOCK_ALLOCATIONS }
 }
 
 /**

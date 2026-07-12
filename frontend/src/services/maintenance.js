@@ -11,27 +11,39 @@
 import { supabase } from '../lib/supabase'
 
 const BASE = '/api/v1'
+const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL
 
 async function authHeader() {
+  if (DEV_MODE) return { Authorization: 'Bearer dev-token' }
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return {}
   return { Authorization: `Bearer ${session.access_token}` }
 }
 
-/**
- * GET /api/v1/maintenance
- * Returns all maintenance requests across all assets.
- * Query: ?status=Pending&asset_id=uuid (both optional)
- */
+const MOCK_MAINTENANCE = [
+  { id: '1', asset: { name: 'MacBook Pro 14"', asset_tag: 'AF-0001' }, issue_description: 'Screen flickering intermittently', priority: 'High', status: 'Pending', raised_by: { name: 'Devipriya' }, raised_at: new Date(Date.now() - 2 * 86400000).toISOString(), technician_name: null },
+  { id: '2', asset: { name: 'Projector', asset_tag: 'AF-0005' }, issue_description: 'Lamp needs replacement', priority: 'Medium', status: 'Approved', raised_by: { name: 'Hari' }, raised_at: new Date(Date.now() - 5 * 86400000).toISOString(), technician_name: null },
+  { id: '3', asset: { name: 'AC Unit - Floor 2', asset_tag: 'AF-0008' }, issue_description: 'Not cooling properly', priority: 'Critical', status: 'TechnicianAssigned', raised_by: { name: 'Abinivas' }, raised_at: new Date(Date.now() - 7 * 86400000).toISOString(), technician_name: 'Rajesh Kumar' },
+  { id: '4', asset: { name: 'Office Chair', asset_tag: 'AF-0012' }, issue_description: 'Armrest broken', priority: 'Low', status: 'Resolved', raised_by: { name: 'Hari' }, raised_at: new Date(Date.now() - 15 * 86400000).toISOString(), technician_name: 'Facilities Team' },
+  { id: '5', asset: { name: 'Dell Monitor 27"', asset_tag: 'AF-0002' }, issue_description: 'Dead pixels', priority: 'Medium', status: 'Rejected', raised_by: { name: 'Devipriya' }, raised_at: new Date(Date.now() - 3 * 86400000).toISOString(), technician_name: null },
+]
+
 export async function getMaintenanceRequests(filters = {}) {
-  const headers = await authHeader()
-  const params = new URLSearchParams()
-  if (filters.status) params.set('status', filters.status)
-  if (filters.assetId) params.set('asset_id', filters.assetId)
-  const query = params.toString() ? `?${params}` : ''
-  const res = await fetch(`${BASE}/maintenance${query}`, { headers })
-  if (!res.ok) throw new Error(`Failed to fetch maintenance requests: ${res.status}`)
-  return res.json()
+  if (DEV_MODE) {
+    let data = MOCK_MAINTENANCE
+    if (filters.status) data = data.filter(m => m.status === filters.status)
+    return data
+  }
+  try {
+    const headers = await authHeader()
+    const params = new URLSearchParams()
+    if (filters.status) params.set('status', filters.status)
+    if (filters.assetId) params.set('asset_id', filters.assetId)
+    const query = params.toString() ? `?${params}` : ''
+    const res = await fetch(`${BASE}/maintenance${query}`, { headers })
+    if (!res.ok) throw new Error(res.status)
+    return res.json()
+  } catch { return MOCK_MAINTENANCE }
 }
 
 /**

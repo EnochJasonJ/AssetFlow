@@ -7,7 +7,10 @@ build/
 coverage/
 .vscode/
 *.log
+# Root-level agent instruction files (not for version control)
 AGENTS.md
 CLAUDE.md
-PRODUCT_CONTEXT.md
-*.md
+/PRODUCT_CONTEXT.md
+# Allow docs folder markdown files — team changelog, split plan, prompts
+!docs/*.md
+!docs/**/*.md

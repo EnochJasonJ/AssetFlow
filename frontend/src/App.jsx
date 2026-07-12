@@ -1,33 +1,64 @@
-import { useState } from 'react'
-import './App.css'
-import { supabase } from './lib/supabase'
+// App.jsx — Router setup
+// Hari sets up all routes here. Each teammate adds their own page imports.
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
 
-function App() {
-  const [count, setCount] = useState(0)
+// Auth pages (Hari)
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
 
-  const testSupabase = async () => {
-    const { data, error } = await supabase.from('profiles').select('id').limit(1)
+// Hari's pages
+import DashboardPage from './pages/dashboard/DashboardPage'
+import OrgSetupPage from './pages/org/OrgSetupPage'
 
-    if (error) {
-      console.error('Supabase connection error:', error.message)
-      return
-    }
+// Placeholders for teammates' pages (replace when they build them)
+import PlaceholderPage from './pages/PlaceholderPage'
 
-    console.log('Supabase connected:', data)
-  }
-
-  return (
-    <main className="app-shell">
-      <h1>AssetFlow</h1>
-      <p>React + Vite + Supabase-ready frontend.</p>
-      <button type="button" onClick={() => setCount((value) => value + 1)}>
-        Count is {count}
-      </button>
-      <button type="button" onClick={testSupabase} className="supabase-button">
-        Test Supabase connection
-      </button>
-    </main>
-  )
+// Route guard — redirects to /login if not authenticated
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'var(--text-muted)' }}><div className="spinner" /></div>
+  return user ? children : <Navigate to="/login" replace />
 }
 
-export default App
+// Admin-only route guard
+function AdminRoute({ children }) {
+  const { profile, loading } = useAuth()
+  if (loading) return null
+  if (!profile) return <Navigate to="/login" replace />
+  if (profile.role !== 'Admin') return <Navigate to="/dashboard" replace />
+  return children
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/login"  element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+
+          {/* Protected — Hari */}
+          <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+          <Route path="/org"       element={<PrivateRoute><AdminRoute><OrgSetupPage /></AdminRoute></PrivateRoute>} />
+
+          {/* Protected — Devipriya (placeholders until she builds them) */}
+          <Route path="/assets"      element={<PrivateRoute><PlaceholderPage name="Asset Directory" owner="Devipriya" screen={4} /></PrivateRoute>} />
+          <Route path="/bookings"    element={<PrivateRoute><PlaceholderPage name="Resource Booking" owner="Devipriya" screen={6} /></PrivateRoute>} />
+          <Route path="/reports"     element={<PrivateRoute><PlaceholderPage name="Reports & Analytics" owner="Devipriya" screen={9} /></PrivateRoute>} />
+          <Route path="/logs"        element={<PrivateRoute><PlaceholderPage name="Activity Logs" owner="Devipriya" screen={10} /></PrivateRoute>} />
+
+          {/* Protected — Abinivas (placeholders until he builds them) */}
+          <Route path="/allocations" element={<PrivateRoute><PlaceholderPage name="Asset Allocation & Transfer" owner="Abinivas" screen={5} /></PrivateRoute>} />
+          <Route path="/maintenance" element={<PrivateRoute><PlaceholderPage name="Maintenance Management" owner="Abinivas" screen={7} /></PrivateRoute>} />
+          <Route path="/audit"       element={<PrivateRoute><PlaceholderPage name="Asset Audit" owner="Abinivas" screen={8} /></PrivateRoute>} />
+
+          {/* Default */}
+          <Route path="/"    element={<Navigate to="/dashboard" replace />} />
+          <Route path="*"    element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  )
+}

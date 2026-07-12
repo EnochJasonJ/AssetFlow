@@ -12,18 +12,37 @@ import { allocateAsset } from '../../services/allocations'
 /** Simple form input wrapper */
 function Field({ label, htmlFor, children, required }) {
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-        {label}{required && <span className="text-red-400 ml-1">*</span>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label
+        htmlFor={htmlFor}
+        style={{
+          display: 'block',
+          fontSize: '11px',
+          fontWeight: 600,
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}
+      >
+        {label}{required && <span style={{ color: 'var(--danger)', marginLeft: '4px' }}>*</span>}
       </label>
       {children}
     </div>
   )
 }
 
-const inputCls =
-  'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 ' +
-  'placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-colors'
+const inputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  background: 'var(--bg-base)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  fontSize: '14px',
+  color: 'var(--text-primary)',
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.15s',
+}
 
 export default function AllocateModal({ onClose, onSuccess, onRequestTransfer }) {
   const [assets, setAssets] = useState([])
@@ -124,43 +143,100 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+    <div
+      className="modal-overlay"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(0,0,0,0.55)',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div
+        className="modal-box"
+        style={{
+          width: '100%',
+          maxWidth: '512px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '90vh',
+        }}
+      >
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
-          <h2 className="text-base font-semibold text-white">Allocate Asset</h2>
+        <div
+          className="modal-header"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 24px',
+            borderBottom: '1px solid var(--border)',
+            flexShrink: 0,
+          }}
+        >
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Allocate Asset</h2>
           <button
+            className="modal-close"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            style={{
+              padding: '6px',
+              borderRadius: 'var(--radius)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
           {/* ── 409 Conflict banner ── */}
           {conflict && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div
+              style={{
+                padding: '16px',
+                background: 'rgba(217,119,6,0.08)',
+                border: '1px solid rgba(217,119,6,0.3)',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <svg width="20" height="20" style={{ color: 'var(--warning)', flexShrink: 0, marginTop: '2px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-semibold text-amber-300">Asset Already Allocated</p>
-                  <p className="text-sm text-amber-200/80 mt-1">
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--warning)', margin: '0 0 4px' }}>Asset Already Allocated</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
                     This asset is currently held by{' '}
-                    <span className="font-semibold text-amber-300">
+                    <span style={{ fontWeight: 600, color: 'var(--warning)' }}>
                       {conflict.held_by?.name ?? 'someone'}
                     </span>
                     {conflict.held_by?.email ? ` (${conflict.held_by.email})` : ''}
                     .
                   </p>
                   {conflict.allocated_since && (
-                    <p className="text-xs text-amber-200/60 mt-1">
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                       Since {new Date(conflict.allocated_since).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                   )}
@@ -170,7 +246,18 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                 id="btn-request-transfer-instead"
                 type="button"
                 onClick={handleTransferInstead}
-                className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-bold rounded-lg transition-colors"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'var(--warning)',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  borderRadius: 'var(--radius)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.15s',
+                }}
               >
                 Request Transfer Instead
               </button>
@@ -179,18 +266,18 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
 
           {/* ── Form ── */}
           {!conflict && (
-            <form id="form-allocate-asset" onSubmit={handleSubmit} className="space-y-4">
+            <form id="form-allocate-asset" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
               {/* Asset picker */}
               <Field label="Asset" htmlFor="allocate-asset-id" required>
                 {loadingDeps ? (
-                  <div className={`${inputCls} text-gray-500`}>Loading assets…</div>
+                  <div style={{ ...inputStyle, color: 'var(--text-muted)' }}>Loading assets…</div>
                 ) : assets.length > 0 ? (
                   <select
                     id="allocate-asset-id"
                     value={form.assetId}
                     onChange={e => set('assetId', e.target.value)}
-                    className={inputCls}
+                    style={inputStyle}
                   >
                     <option value="">Select an available asset…</option>
                     {assets.map(a => (
@@ -206,24 +293,32 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                     value={form.assetId}
                     onChange={e => set('assetId', e.target.value)}
                     placeholder="Paste asset ID"
-                    className={inputCls}
+                    style={inputStyle}
                   />
                 )}
-                {fieldErrors.assetId && <p className="text-xs text-red-400">{fieldErrors.assetId}</p>}
+                {fieldErrors.assetId && <p style={{ fontSize: '12px', color: 'var(--danger)', margin: '2px 0 0' }}>{fieldErrors.assetId}</p>}
               </Field>
 
               {/* Assign type toggle */}
-              <div className="flex gap-2">
+              <div style={{ display: 'flex', gap: '8px' }}>
                 {['employee', 'department'].map(t => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => set('assignType', t)}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors capitalize ${
-                      form.assignType === t
-                        ? 'bg-violet-600 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '8px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)',
+                      cursor: 'pointer',
+                      textTransform: 'capitalize',
+                      transition: 'background 0.15s, color 0.15s',
+                      background: form.assignType === t ? 'var(--accent)' : 'var(--bg-base)',
+                      color: form.assignType === t ? '#fff' : 'var(--text-secondary)',
+                    }}
                   >
                     {t === 'employee' ? 'Assign to Employee' : 'Assign to Department'}
                   </button>
@@ -238,7 +333,7 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                       id="allocate-employee-id"
                       value={form.assignedToUserId}
                       onChange={e => set('assignedToUserId', e.target.value)}
-                      className={inputCls}
+                      style={inputStyle}
                     >
                       <option value="">Select an employee…</option>
                       {employees.map(emp => (
@@ -254,10 +349,10 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                       value={form.assignedToUserId}
                       onChange={e => set('assignedToUserId', e.target.value)}
                       placeholder="Paste employee ID"
-                      className={inputCls}
+                      style={inputStyle}
                     />
                   )}
-                  {fieldErrors.assignedToUserId && <p className="text-xs text-red-400">{fieldErrors.assignedToUserId}</p>}
+                  {fieldErrors.assignedToUserId && <p style={{ fontSize: '12px', color: 'var(--danger)', margin: '2px 0 0' }}>{fieldErrors.assignedToUserId}</p>}
                 </Field>
               ) : (
                 <Field label="Department" htmlFor="allocate-department-id" required>
@@ -266,7 +361,7 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                       id="allocate-department-id"
                       value={form.assignedToDepartmentId}
                       onChange={e => set('assignedToDepartmentId', e.target.value)}
-                      className={inputCls}
+                      style={inputStyle}
                     >
                       <option value="">Select a department…</option>
                       {departments.map(d => (
@@ -280,10 +375,10 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                       value={form.assignedToDepartmentId}
                       onChange={e => set('assignedToDepartmentId', e.target.value)}
                       placeholder="Paste department ID"
-                      className={inputCls}
+                      style={inputStyle}
                     />
                   )}
-                  {fieldErrors.assignedToDepartmentId && <p className="text-xs text-red-400">{fieldErrors.assignedToDepartmentId}</p>}
+                  {fieldErrors.assignedToDepartmentId && <p style={{ fontSize: '12px', color: 'var(--danger)', margin: '2px 0 0' }}>{fieldErrors.assignedToDepartmentId}</p>}
                 </Field>
               )}
 
@@ -295,23 +390,34 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                   value={form.expectedReturnDate}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={e => set('expectedReturnDate', e.target.value)}
-                  className={inputCls}
+                  style={inputStyle}
                 />
               </Field>
 
               {/* Submit error */}
               {fieldErrors.submit && (
-                <p className="text-sm text-red-400 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: 'var(--danger)',
+                    padding: '12px',
+                    background: 'rgba(220,38,38,0.08)',
+                    border: '1px solid rgba(220,38,38,0.2)',
+                    borderRadius: 'var(--radius)',
+                    margin: 0,
+                  }}
+                >
                   {fieldErrors.submit}
                 </p>
               )}
 
               {/* Footer */}
-              <div className="flex gap-3 pt-2">
+              <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm font-semibold rounded-lg transition-colors"
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '10px' }}
                 >
                   Cancel
                 </button>
@@ -319,7 +425,8 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
                   id="btn-submit-allocate"
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '10px', opacity: submitting ? 0.6 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
                 >
                   {submitting ? 'Allocating…' : 'Allocate Asset'}
                 </button>
@@ -332,7 +439,8 @@ export default function AllocateModal({ onClose, onSuccess, onRequestTransfer })
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm font-semibold rounded-lg transition-colors"
+              className="btn btn-secondary"
+              style={{ width: '100%', padding: '10px' }}
             >
               Cancel
             </button>

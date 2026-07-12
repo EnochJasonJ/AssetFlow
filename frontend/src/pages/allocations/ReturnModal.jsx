@@ -8,9 +8,19 @@
 import { useState } from 'react'
 import { returnAsset } from '../../services/allocations'
 
-const inputCls =
-  'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 ' +
-  'placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-colors'
+const inputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  background: 'var(--bg-base)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  fontSize: '14px',
+  color: 'var(--text-primary)',
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.15s',
+  resize: 'none',
+}
 
 export default function ReturnModal({ allocation, onClose, onSuccess }) {
   const [conditionNotes, setConditionNotes] = useState('')
@@ -37,43 +47,106 @@ export default function ReturnModal({ allocation, onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl">
+    <div
+      className="modal-overlay"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(0,0,0,0.55)',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div
+        className="modal-box"
+        style={{
+          width: '100%',
+          maxWidth: '448px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <div
+          className="modal-header"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 24px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <div>
-            <h2 className="text-base font-semibold text-white">Return Asset</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Return Asset</h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: 0 }}>
               {allocation.asset?.asset_tag} — {allocation.asset?.name ?? 'Asset'}
             </p>
           </div>
           <button
+            className="modal-close"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            style={{
+              padding: '6px',
+              borderRadius: 'var(--radius)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Info banner */}
-          <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-            <svg className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              padding: '12px',
+              background: 'rgba(59,130,246,0.08)',
+              border: '1px solid rgba(59,130,246,0.2)',
+              borderRadius: 'var(--radius-lg)',
+            }}
+          >
+            <svg width="16" height="16" style={{ color: '#60a5fa', flexShrink: 0, marginTop: '2px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-xs text-blue-300">
+            <p style={{ fontSize: '12px', color: '#93c5fd', margin: 0 }}>
               Condition notes are required and will be reviewed by the Asset Manager during check-in.
             </p>
           </div>
 
           {/* Condition notes */}
-          <div className="space-y-1.5">
-            <label htmlFor="return-condition-notes" className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Condition Notes <span className="text-red-400">*</span>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label
+              htmlFor="return-condition-notes"
+              style={{
+                display: 'block',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Condition Notes <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <textarea
               id="return-condition-notes"
@@ -81,26 +154,37 @@ export default function ReturnModal({ allocation, onClose, onSuccess }) {
               value={conditionNotes}
               onChange={e => { setConditionNotes(e.target.value); setError(null) }}
               placeholder="Describe the current condition of the asset. Note any damage, wear, or issues found…"
-              className={`${inputCls} resize-none`}
+              style={inputStyle}
             />
-            <p className="text-xs text-gray-600">
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
               {conditionNotes.length} characters
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <p className="text-sm text-red-400 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p
+              style={{
+                fontSize: '13px',
+                color: 'var(--danger)',
+                padding: '12px',
+                background: 'rgba(220,38,38,0.08)',
+                border: '1px solid rgba(220,38,38,0.2)',
+                borderRadius: 'var(--radius)',
+                margin: 0,
+              }}
+            >
               {error}
             </p>
           )}
 
           {/* Footer */}
-          <div className="flex gap-3 pt-2">
+          <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm font-semibold rounded-lg transition-colors"
+              className="btn btn-secondary"
+              style={{ flex: 1, padding: '10px' }}
             >
               Cancel
             </button>
@@ -108,7 +192,14 @@ export default function ReturnModal({ allocation, onClose, onSuccess }) {
               id="btn-confirm-return"
               type="submit"
               disabled={submitting}
-              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+              className="btn btn-primary"
+              style={{
+                flex: 1,
+                padding: '10px',
+                background: 'var(--success)',
+                opacity: submitting ? 0.6 : 1,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
             >
               {submitting ? 'Submitting…' : 'Confirm Return'}
             </button>

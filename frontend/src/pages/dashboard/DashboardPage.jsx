@@ -79,7 +79,7 @@ export default function DashboardPage() {
             <strong style={{ color: '#f87171' }}>{kpis.overdue} overdue return{kpis.overdue > 1 ? 's' : ''}</strong>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}> — assets past their expected return date.</span>
           </div>
-          <button className="btn btn-sm" style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }} onClick={() => navigate('/allocations')}>
+          <button className="btn btn-sm btn-danger" style={{ marginLeft: 'auto' }} onClick={() => navigate('/allocations')}>
             View →
           </button>
         </div>

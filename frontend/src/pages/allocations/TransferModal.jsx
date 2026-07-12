@@ -12,9 +12,19 @@
 import { useState } from 'react'
 import { requestTransfer } from '../../services/allocations'
 
-const inputCls =
-  'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 ' +
-  'placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-colors'
+const inputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  background: 'var(--bg-base)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  fontSize: '14px',
+  color: 'var(--text-primary)',
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.15s',
+  resize: 'none',
+}
 
 export default function TransferModal({ allocation, onClose, onSuccess }) {
   const [reason, setReason] = useState('')
@@ -48,77 +58,174 @@ export default function TransferModal({ allocation, onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl">
+    <div
+      className="modal-overlay"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(0,0,0,0.55)',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div
+        className="modal-box"
+        style={{
+          width: '100%',
+          maxWidth: '448px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <div
+          className="modal-header"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 24px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <div>
-            <h2 className="text-base font-semibold text-white">Request Transfer</h2>
-            {assetTag && <p className="text-xs text-gray-500 mt-0.5">{assetTag} — {assetName}</p>}
+            <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Request Transfer</h2>
+            {assetTag && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: 0 }}>{assetTag} — {assetName}</p>}
           </div>
           <button
+            className="modal-close"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            style={{
+              padding: '6px',
+              borderRadius: 'var(--radius)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Success state */}
           {submitted ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
-                <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div style={{ textAlign: 'center', paddingTop: '24px', paddingBottom: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'rgba(5,150,105,0.15)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <svg width="24" height="24" style={{ color: 'var(--success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-sm text-gray-300 font-medium">Transfer request submitted!</p>
-              <p className="text-xs text-gray-500">
+              <p style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500, margin: 0 }}>Transfer request submitted!</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
                 An Asset Manager or Department Head will review and approve it.
               </p>
               <button
                 onClick={() => { onSuccess(); onClose() }}
-                className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '10px' }}
               >
                 Done
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
               {/* Current holder info */}
               {currentHolder && (
-                <div className="flex items-start gap-3 p-3 bg-gray-800 rounded-xl">
-                  <div className="w-8 h-8 rounded-full bg-violet-600/30 text-violet-300 flex items-center justify-center text-xs font-bold shrink-0">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '12px',
+                    background: 'var(--bg-base)',
+                    borderRadius: 'var(--radius-lg)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'var(--accent-glow)',
+                      color: 'var(--accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
                     {(currentHolder.name ?? '?').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-300">Currently held by</p>
-                    <p className="text-sm text-white font-medium">{currentHolder.name ?? '—'}</p>
-                    {currentHolder.email && <p className="text-xs text-gray-500">{currentHolder.email}</p>}
+                    <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 2px' }}>Currently held by</p>
+                    <p style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500, margin: 0 }}>{currentHolder.name ?? '—'}</p>
+                    {currentHolder.email && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: 0 }}>{currentHolder.email}</p>}
                   </div>
                 </div>
               )}
 
               {/* Transfer flow explanation */}
-              <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                <svg className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  padding: '12px',
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.2)',
+                  borderRadius: 'var(--radius-lg)',
+                }}
+              >
+                <svg width="16" height="16" style={{ color: '#60a5fa', flexShrink: 0, marginTop: '2px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-xs text-blue-300">
+                <p style={{ fontSize: '12px', color: '#93c5fd', margin: 0 }}>
                   Transfer flow: <strong>Requested → Approved</strong> (by Asset Manager / Dept Head) → Re-allocated to you.
                 </p>
               </div>
 
               {/* Reason input */}
-              <div className="space-y-1.5">
-                <label htmlFor="transfer-reason" className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  Reason for Transfer <span className="text-red-400">*</span>
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label
+                  htmlFor="transfer-reason"
+                  style={{
+                    display: 'block',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  Reason for Transfer <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <textarea
                   id="transfer-reason"
@@ -126,23 +233,34 @@ export default function TransferModal({ allocation, onClose, onSuccess }) {
                   value={reason}
                   onChange={e => { setReason(e.target.value); setError(null) }}
                   placeholder="Explain why you need this asset…"
-                  className={`${inputCls} resize-none`}
+                  style={inputStyle}
                 />
               </div>
 
               {/* Error */}
               {error && (
-                <p className="text-sm text-red-400 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: 'var(--danger)',
+                    padding: '12px',
+                    background: 'rgba(220,38,38,0.08)',
+                    border: '1px solid rgba(220,38,38,0.2)',
+                    borderRadius: 'var(--radius)',
+                    margin: 0,
+                  }}
+                >
                   {error}
                 </p>
               )}
 
               {/* Footer */}
-              <div className="flex gap-3 pt-2">
+              <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm font-semibold rounded-lg transition-colors"
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '10px' }}
                 >
                   Cancel
                 </button>
@@ -150,7 +268,8 @@ export default function TransferModal({ allocation, onClose, onSuccess }) {
                   id="btn-submit-transfer"
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '10px', opacity: submitting ? 0.6 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
                 >
                   {submitting ? 'Submitting…' : 'Request Transfer'}
                 </button>

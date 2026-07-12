@@ -143,7 +143,7 @@ export default function ActivityLogsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '500px', overflowY: 'auto' }}>
                 {/* Unread Section */}
                 {unreadNotifs.map(notif => (
-                  <div key={notif.id} className="card" style={{ padding: '0.75rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid var(--accent)', fontSize: '0.82rem', position: 'relative' }}>
+                  <div key={notif.id} className="card" style={{ padding: '0.75rem', background: 'var(--accent-glow)', border: '1px solid var(--accent)', fontSize: '0.82rem', position: 'relative' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', paddingRight: '1.2rem' }}>
                       <span className="badge badge-accent" style={{ background: 'var(--accent-glow)', color: 'var(--accent)', fontWeight: 'bold' }}>
                         {notif.type?.replace(/([A-Z])/g, ' $1').trim()}

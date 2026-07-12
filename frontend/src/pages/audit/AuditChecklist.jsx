@@ -17,19 +17,36 @@ import { getAuditItems, logAuditItem } from '../../services/audit'
 
 const RESULTS = ['Pending', 'Verified', 'Missing', 'Damaged']
 
-const RESULT_STYLES = {
-  Pending:  { cls: 'bg-gray-700  text-gray-400',   dot: 'bg-gray-500' },
-  Verified: { cls: 'bg-emerald-600/30 text-emerald-300', dot: 'bg-emerald-400' },
-  Missing:  { cls: 'bg-red-600/30     text-red-300',     dot: 'bg-red-400' },
-  Damaged:  { cls: 'bg-amber-600/30   text-amber-300',   dot: 'bg-amber-400' },
+// Dot colours for summary chips (inline, not Tailwind)
+const RESULT_DOT = {
+  Pending:  '#9ca3af',
+  Verified: '#059669',
+  Missing:  '#dc2626',
+  Damaged:  '#d97706',
+}
+
+const RESULT_CHIP_STYLE = {
+  Pending:  { background: 'rgba(156,163,175,0.15)', color: '#9ca3af' },
+  Verified: { background: 'rgba(5,150,105,0.15)',   color: '#059669' },
+  Missing:  { background: 'rgba(220,38,38,0.15)',   color: '#dc2626' },
+  Damaged:  { background: 'rgba(217,119,6,0.15)',   color: '#d97706' },
+}
+
+// Maps result value → global badge class name
+function resultBadgeClass(result) {
+  switch (result) {
+    case 'Verified': return 'badge badge-approved'
+    case 'Missing':  return 'badge badge-lost'
+    case 'Damaged':  return 'badge badge-maintenance'
+    case 'Pending':
+    default:         return 'badge badge-pending'
+  }
 }
 
 function ResultBadge({ result }) {
-  const s = RESULT_STYLES[result] ?? RESULT_STYLES.Pending
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${s.cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {result}
+    <span className={resultBadgeClass(result ?? 'Pending')}>
+      {result ?? 'Pending'}
     </span>
   )
 }
@@ -110,11 +127,16 @@ export default function AuditChecklist({ cycleId, isOpen }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10 text-gray-600 text-sm">
-        <svg className="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 0',
+        color: 'var(--text-muted)',
+        fontSize: '0.875rem',
+        gap: '8px',
+      }}>
+        <span className="spinner" style={{ width: '16px', height: '16px' }} />
         Loading assets…
       </div>
     )
@@ -122,37 +144,87 @@ export default function AuditChecklist({ cycleId, isOpen }) {
 
   if (error) {
     return (
-      <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-        {error}
-        <button onClick={loadItems} className="ml-auto underline">Retry</button>
+      <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <span>{error}</span>
+        <button
+          onClick={loadItems}
+          style={{
+            marginLeft: 'auto',
+            background: 'none',
+            border: 'none',
+            color: 'var(--danger)',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            fontSize: '0.875rem',
+            padding: 0,
+          }}
+        >
+          Retry
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Progress bar */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)',
+        }}>
           <span>{verified} of {total} assets verified</span>
           <span>{pct}%</span>
         </div>
-        <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+        <div style={{
+          height: '6px',
+          background: 'var(--border)',
+          borderRadius: '9999px',
+          overflow: 'hidden',
+        }}>
           <div
-            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-            style={{ width: `${pct}%` }}
+            style={{
+              height: '100%',
+              width: `${pct}%`,
+              background: 'var(--success)',
+              borderRadius: '9999px',
+              transition: 'width 0.5s ease',
+            }}
           />
         </div>
       </div>
 
       {/* Summary chips */}
-      <div className="flex gap-2 flex-wrap">
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {RESULTS.map(r => {
           const count = items.filter(i => i.result === r).length
+          const chipStyle = RESULT_CHIP_STYLE[r] ?? RESULT_CHIP_STYLE.Pending
           return (
-            <div key={r} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${RESULT_STYLES[r]?.cls ?? ''}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${RESULT_STYLES[r]?.dot ?? ''}`} />
+            <div
+              key={r}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                background: chipStyle.background,
+                color: chipStyle.color,
+              }}
+            >
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: RESULT_DOT[r] ?? '#9ca3af',
+                flexShrink: 0,
+              }} />
               {r}: {count}
             </div>
           )
@@ -160,20 +232,47 @@ export default function AuditChecklist({ cycleId, isOpen }) {
       </div>
 
       {/* ── Asset checklist table ── */}
-      <div className="border border-gray-700 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div style={{
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        overflow: 'hidden',
+      }}>
+        <table className="table" style={{ width: '100%', fontSize: '0.875rem' }}>
           <thead>
-            <tr className="border-b border-gray-700 bg-gray-800/50">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Asset</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Result</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Notes</th>
+            <tr style={{
+              borderBottom: '1px solid var(--border)',
+              background: 'var(--bg-hover)',
+            }}>
+              {['Asset', 'Location', 'Result', 'Notes'].map(h => (
+                <th
+                  key={h}
+                  style={{
+                    padding: '10px 16px',
+                    textAlign: 'left',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700/50">
+          <tbody>
             {items.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-gray-600 text-sm">
+                <td
+                  colSpan={4}
+                  style={{
+                    padding: '32px 16px',
+                    textAlign: 'center',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.875rem',
+                  }}
+                >
                   No assets in scope for this cycle
                 </td>
               </tr>
@@ -181,48 +280,99 @@ export default function AuditChecklist({ cycleId, isOpen }) {
             {items.map(item => {
               const isSaving = saving[item.id] === true
               const isError  = saving[item.id] === 'error'
+
+              const rowBg =
+                item.result === 'Missing' ? 'rgba(220,38,38,0.05)' :
+                item.result === 'Damaged' ? 'rgba(217,119,6,0.05)' :
+                'transparent'
+
               return (
-                <tr key={item.id} className={`transition-colors ${
-                  item.result === 'Missing' ? 'bg-red-950/20' :
-                  item.result === 'Damaged' ? 'bg-amber-950/20' :
-                  'hover:bg-gray-800/30'
-                }`}>
+                <tr
+                  key={item.id}
+                  style={{
+                    borderTop: '1px solid var(--border-light)',
+                    background: rowBg,
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    if (!item.result || item.result === 'Verified' || item.result === 'Pending') {
+                      e.currentTarget.style.background = 'var(--bg-hover)'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = rowBg
+                  }}
+                >
                   {/* Asset */}
-                  <td className="px-4 py-3">
-                    <p className="font-mono text-xs text-violet-400">{item.asset?.asset_tag}</p>
-                    <p className="text-sm font-medium text-gray-200">{item.asset?.name}</p>
+                  <td style={{ padding: '12px 16px' }}>
+                    <p style={{
+                      fontFamily: 'monospace',
+                      fontSize: '0.75rem',
+                      color: 'var(--accent)',
+                      margin: 0,
+                    }}>
+                      {item.asset?.asset_tag}
+                    </p>
+                    <p style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      color: 'var(--text-primary)',
+                      margin: '2px 0 0',
+                    }}>
+                      {item.asset?.name}
+                    </p>
                   </td>
 
                   {/* Location */}
-                  <td className="px-4 py-3 text-xs text-gray-500">
+                  <td style={{
+                    padding: '12px 16px',
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                  }}>
                     {item.asset?.location ?? '—'}
                   </td>
 
                   {/* Result dropdown */}
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '12px 16px' }}>
                     {isOpen ? (
-                      <div className="flex items-center gap-2">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <select
                           id={`audit-result-${item.id}`}
                           value={item.result ?? 'Pending'}
                           onChange={e => handleResultChange(item, e.target.value)}
                           disabled={isSaving}
-                          className={`px-2 py-1 text-xs font-semibold rounded-lg border bg-gray-800 transition-colors focus:outline-none focus:border-violet-500 ${
-                            item.result === 'Verified' ? 'border-emerald-500/50 text-emerald-300' :
-                            item.result === 'Missing'  ? 'border-red-500/50     text-red-300' :
-                            item.result === 'Damaged'  ? 'border-amber-500/50   text-amber-300' :
-                            'border-gray-700 text-gray-400'
-                          }`}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: 'var(--radius)',
+                            border: `1px solid ${
+                              item.result === 'Verified' ? 'rgba(5,150,105,0.5)' :
+                              item.result === 'Missing'  ? 'rgba(220,38,38,0.5)' :
+                              item.result === 'Damaged'  ? 'rgba(217,119,6,0.5)' :
+                              'var(--border)'
+                            }`,
+                            background: 'var(--bg-surface)',
+                            color:
+                              item.result === 'Verified' ? 'var(--success)' :
+                              item.result === 'Missing'  ? 'var(--danger)' :
+                              item.result === 'Damaged'  ? 'var(--warning)' :
+                              'var(--text-secondary)',
+                            outline: 'none',
+                            cursor: isSaving ? 'not-allowed' : 'pointer',
+                            transition: 'border-color 0.15s',
+                          }}
                         >
                           {RESULTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                         {isSaving && (
-                          <svg className="w-3 h-3 animate-spin text-gray-500" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
+                          <span className="spinner" style={{ width: '12px', height: '12px' }} />
                         )}
-                        {isError && <span className="text-xs text-red-400">Save failed</span>}
+                        {isError && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>
+                            Save failed
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <ResultBadge result={item.result ?? 'Pending'} />
@@ -230,7 +380,7 @@ export default function AuditChecklist({ cycleId, isOpen }) {
                   </td>
 
                   {/* Notes */}
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '12px 16px' }}>
                     {isOpen ? (
                       <input
                         id={`audit-notes-${item.id}`}
@@ -239,10 +389,25 @@ export default function AuditChecklist({ cycleId, isOpen }) {
                         onChange={e => handleNotesChange(item, e.target.value)}
                         onBlur={() => handleNotesSave(item)}
                         placeholder="Add notes…"
-                        className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 placeholder-gray-600 focus:outline-none focus:border-violet-500 transition-colors"
+                        style={{
+                          width: '100%',
+                          padding: '4px 8px',
+                          fontSize: '0.75rem',
+                          background: 'var(--bg-hover)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius)',
+                          color: 'var(--text-primary)',
+                          outline: 'none',
+                          transition: 'border-color 0.15s',
+                          boxSizing: 'border-box',
+                        }}
+                        onFocus={e => { e.target.style.borderColor = 'var(--accent)' }}
+                        onBlurCapture={e => { e.target.style.borderColor = 'var(--border)' }}
                       />
                     ) : (
-                      <span className="text-xs text-gray-500">{item.notes ?? '—'}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {item.notes ?? '—'}
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -253,38 +418,107 @@ export default function AuditChecklist({ cycleId, isOpen }) {
       </div>
 
       {/* ── Discrepancy Report (auto-derived) ── */}
-      <div className="border border-gray-700 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 bg-gray-800/50 border-b border-gray-700 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-300">Discrepancy Report</h3>
-          <span className="text-xs text-gray-600">
-            {discrepancies.length === 0 ? 'No discrepancies' : `${discrepancies.length} item${discrepancies.length !== 1 ? 's' : ''}`}
+      <div style={{
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          padding: '12px 16px',
+          background: 'var(--bg-hover)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}>
+            Discrepancy Report
+          </h3>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {discrepancies.length === 0
+              ? 'No discrepancies'
+              : `${discrepancies.length} item${discrepancies.length !== 1 ? 's' : ''}`}
           </span>
         </div>
 
         {discrepancies.length === 0 ? (
-          <div className="px-4 py-6 text-center text-gray-600 text-sm flex flex-col items-center gap-2">
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{
+            padding: '24px 16px',
+            textAlign: 'center',
+            color: 'var(--text-muted)',
+            fontSize: '0.875rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <svg
+              style={{ width: '24px', height: '24px', color: 'var(--border-light)' }}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             No missing or damaged assets
           </div>
         ) : (
-          <div className="divide-y divide-gray-700/50">
+          <div>
             {discrepancies.map(item => (
-              <div key={item.id} className={`flex items-start gap-4 px-4 py-3 ${
-                item.result === 'Missing' ? 'bg-red-950/15' : 'bg-amber-950/15'
-              }`}>
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '16px',
+                  padding: '12px 16px',
+                  borderTop: '1px solid var(--border-light)',
+                  background: item.result === 'Missing'
+                    ? 'rgba(220,38,38,0.04)'
+                    : 'rgba(217,119,6,0.04)',
+                }}
+              >
                 <ResultBadge result={item.result} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-violet-400">{item.asset?.asset_tag}</span>
-                    <span className="text-sm font-medium text-gray-200">{item.asset?.name}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      fontFamily: 'monospace',
+                      fontSize: '0.75rem',
+                      color: 'var(--accent)',
+                    }}>
+                      {item.asset?.asset_tag}
+                    </span>
+                    <span style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      color: 'var(--text-primary)',
+                    }}>
+                      {item.asset?.name}
+                    </span>
                   </div>
                   {item.asset?.location && (
-                    <p className="text-xs text-gray-500 mt-0.5">{item.asset.location}</p>
+                    <p style={{
+                      margin: '2px 0 0',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                    }}>
+                      {item.asset.location}
+                    </p>
                   )}
                   {item.notes && (
-                    <p className="text-xs text-gray-400 mt-1 italic">"{item.notes}"</p>
+                    <p style={{
+                      margin: '4px 0 0',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-secondary)',
+                      fontStyle: 'italic',
+                    }}>
+                      "{item.notes}"
+                    </p>
                   )}
                 </div>
               </div>

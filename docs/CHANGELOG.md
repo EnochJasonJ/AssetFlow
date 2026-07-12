@@ -30,6 +30,29 @@ Short paragraph of what was done and why.
 
 ## Entries (Latest First)
 
+### [2026-07-12 11:41] — Hari — Team Names & UI Re-split
+**Type:** Docs | Planning
+**Files Changed:**
+- `docs/UI_SPLIT.md` (rewritten — real names, fair 3-way split across all 10 screens)
+- `docs/MODULE_OWNERS.md` (updated — real names, Jason owns all backend)
+- `docs/TEAM_PROMPT.md` (updated — team section replaced with real names)
+- `docs/CHANGELOG.md` (this entry)
+
+**Summary:**
+Replaced all placeholder codenames with real team member names. Team is 4 people total: Hari, Devipriya, Abinivas on frontend UI, Jason on backend. Redistributed all 10 screens fairly across the 3 frontend members (was previously split among 5 codenames with Screen 8 unassigned — now all 10 screens have an owner).
+
+**Details:**
+- **Hari** → Screen 1 (Login/Signup) + Screen 2 (Dashboard) + Screen 3 (Org Setup) + All Shared Components
+- **Devipriya** → Screen 4 (Asset Directory) + Screen 6 (Resource Booking) + Screen 9 (Reports) + Screen 10 (Activity Logs)
+- **Abinivas** → Screen 5 (Allocation & Transfer) + Screen 7 (Maintenance) + Screen 8 (Audit)
+- **Jason** → All of `/backend` — API endpoints, Prisma schema, Auth, DB
+- Screen 8 (Audit) now assigned to Abinivas — no longer unassigned
+- Start order: Hari builds shared components first, then Devipriya & Abinivas work in parallel
+
+**Open / Decisions Made:**
+- ✅ All 10 screens now have owners
+- ✅ Jason owns all backend — frontend team does not touch `/backend`
+
 ### [2026-07-12 11:23] — Hari — Merge Resolution: main → dev2
 **Type:** Config | Schema | Docs
 **Files Changed:**

@@ -7,6 +7,3 @@ build/
 coverage/
 .vscode/
 *.log
-AGENTS.md
-CLAUDE.md
-PRODUCT_CONTEXT.md

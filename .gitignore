@@ -7,4 +7,3 @@ build/
 coverage/
 .vscode/
 *.log
-# Root-level agent instruction files (not for version control)

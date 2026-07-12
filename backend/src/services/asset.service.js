@@ -45,12 +45,24 @@ export const registerAsset = async (data) => {
 };
 
 export const getAllAssets = async (filters) => {
-  // filters could be { status: 'AVAILABLE', category_id: '...' }
   const where = {};
   
-  if (filters.status) where.status = filters.status;
+  if (filters.status) {
+    const statusMap = {
+      'available': 'AVAILABLE',
+      'allocated': 'ALLOCATED',
+      'reserved': 'RESERVED',
+      'undermaintenance': 'UNDER_MAINTENANCE',
+      'under_maintenance': 'UNDER_MAINTENANCE',
+      'lost': 'LOST',
+      'retired': 'RETIRED',
+      'disposed': 'DISPOSED'
+    };
+    const key = String(filters.status).toLowerCase().replace(/_/g, '');
+    where.status = statusMap[key] || filters.status.toUpperCase();
+  }
   if (filters.category_id) where.category_id = filters.category_id;
-  if (filters.is_bookable !== undefined) where.is_bookable = filters.is_bookable === 'true';
+  if (filters.is_bookable !== undefined) where.is_bookable = filters.is_bookable === 'true' || filters.is_bookable === true;
 
   return prisma.asset.findMany({
     where,
@@ -117,6 +129,29 @@ export const allocateAsset = async (asset_id, user_id, expected_return_date, con
 
     return allocation;
   });
+};
+
+export const getAllAllocations = async (filters = {}) => {
+  const where = {};
+  if (filters.asset_id) where.asset_id = filters.asset_id;
+  if (filters.user_id) where.assigned_to_user_id = filters.user_id;
+  if (filters.status === 'Active') where.is_active = true;
+  if (filters.status === 'Returned') where.is_active = false;
+
+  const allocations = await prisma.allocation.findMany({
+    where,
+    include: {
+      asset: { select: { id: true, name: true, asset_tag: true } },
+      user: { select: { id: true, name: true, email: true } }
+    },
+    orderBy: { created_at: 'desc' }
+  });
+
+  return allocations.map(a => ({
+    ...a,
+    assigned_to_user: a.user ? { name: a.user.name, email: a.user.email } : null,
+    status: a.is_active ? 'Active' : 'Returned'
+  }));
 };
 
 export const returnAsset = async (allocation_id, condition_notes) => {

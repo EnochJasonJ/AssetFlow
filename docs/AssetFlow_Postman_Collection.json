@@ -1,0 +1,686 @@
+{
+  "info": {
+    "_postman_id": "c1f7a39d-4e9b-4c28-98e3-assetflow001",
+    "name": "AssetFlow Enterprise API v1",
+    "description": "Comprehensive Postman collection covering all REST API endpoints for AssetFlow Enterprise Asset & Resource Management Backend. Includes automated scripts on Auth requests to auto-save JWT tokens to environment, global, and collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Server Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "if (responseJson && responseJson.token) {",
+                  "    pm.environment.set('token', responseJson.token);",
+                  "    pm.globals.set('token', responseJson.token);",
+                  "    pm.collectionVariables.set('token', responseJson.token);",
+                  "    console.log('Auto-saved token to Postman environment, globals, and collection variables!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@assetflow.com\",\n  \"password\": \"SecurePass123!\",\n  \"full_name\": \"Alice Admin\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "if (responseJson && responseJson.token) {",
+                  "    pm.environment.set('token', responseJson.token);",
+                  "    pm.globals.set('token', responseJson.token);",
+                  "    pm.collectionVariables.set('token', responseJson.token);",
+                  "    console.log('Auto-saved token to Postman environment, globals, and collection variables!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@assetflow.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "GET /api/v1/users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/users/:id/role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ASSET_MANAGER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/USER_UUID_HERE/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "USER_UUID_HERE", "role"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Departments & Categories",
+      "item": [
+        {
+          "name": "GET /api/v1/departments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "departments"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/departments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"parent_id\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "departments"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/categories",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptops\",\n  \"description\": \"Company issued laptops and notebooks\",\n  \"custom_schema\": {\n    \"cpu\": \"string\",\n    \"ram_gb\": \"number\",\n    \"storage\": \"string\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Assets & Allocations",
+      "item": [
+        {
+          "name": "GET /api/v1/assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assets?status=AVAILABLE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assets"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "AVAILABLE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/assets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MacBook Pro M3 Max\",\n  \"category_id\": \"CATEGORY_UUID_HERE\",\n  \"department_id\": \"DEPARTMENT_UUID_HERE\",\n  \"serial_number\": \"C02XM012ABCD\",\n  \"acquisition_cost\": 3499.99,\n  \"custom_fields\": {\n    \"cpu\": \"Apple M3 Max\",\n    \"ram_gb\": 64,\n    \"storage\": \"2TB SSD\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assets"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/assets/:id/history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assets/ASSET_UUID_HERE/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assets", "ASSET_UUID_HERE", "history"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/allocations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_id\": \"ASSET_UUID_HERE\",\n  \"assigned_to\": \"EMPLOYEE_UUID_HERE\",\n  \"notes\": \"Assigned for onboarding project\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/allocations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "allocations"]
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/allocations/:id/return",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condition_in\": \"GOOD\",\n  \"notes\": \"Returned upon project completion\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/allocations/ALLOCATION_UUID_HERE/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "allocations", "ALLOCATION_UUID_HERE", "return"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Transfers",
+      "item": [
+        {
+          "name": "POST /api/v1/transfers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_id\": \"ASSET_UUID_HERE\",\n  \"to_user_id\": \"NEW_EMPLOYEE_UUID_HERE\",\n  \"notes\": \"Handing over laptop for design work\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transfers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transfers"]
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/transfers/:id/approve",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transfers/TRANSFER_UUID_HERE/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transfers", "TRANSFER_UUID_HERE", "approve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Bookings",
+      "item": [
+        {
+          "name": "GET /api/v1/bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/bookings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource_id\": \"SHARED_ASSET_UUID_HERE\",\n  \"start_time\": \"2026-07-20T09:00:00Z\",\n  \"end_time\": \"2026-07-20T12:00:00Z\",\n  \"notes\": \"Reserved for client demo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/bookings/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/BOOKING_UUID_HERE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings", "BOOKING_UUID_HERE"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Maintenance",
+      "item": [
+        {
+          "name": "GET /api/v1/maintenance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/maintenance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "maintenance"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_id\": \"ASSET_UUID_HERE\",\n  \"issue_description\": \"Battery overheating under load\",\n  \"priority\": \"HIGH\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/maintenance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "maintenance"]
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/maintenance/:id/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"resolution_notes\": \"Replaced battery unit\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/maintenance/MAINTENANCE_UUID_HERE/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "maintenance", "MAINTENANCE_UUID_HERE", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Audits",
+      "item": [
+        {
+          "name": "GET /api/v1/audits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "audits"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/audits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q3 2026 IT Hardware Inventory Audit\",\n  \"department_id\": \"DEPARTMENT_UUID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "audits"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/audits/:id/verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_id\": \"ASSET_UUID_HERE\",\n  \"status\": \"VERIFIED\",\n  \"notes\": \"Barcode scanned and verified in office\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audits/AUDIT_UUID_HERE/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "audits", "AUDIT_UUID_HERE", "verify"]
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/audits/:id/close",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audits/AUDIT_UUID_HERE/close",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "audits", "AUDIT_UUID_HERE", "close"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Dashboard",
+      "item": [
+        {
+          "name": "GET /api/v1/dashboard/summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dashboard/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dashboard", "summary"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,8 @@ import bookingRoutes from './routes/booking.routes.js';
 import maintenanceRoutes from './routes/maintenance.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import logRoutes from './routes/log.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 app.use('/api/v1/auth', authRoutes);
@@ -30,6 +32,8 @@ app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/maintenance', maintenanceRoutes);
 app.use('/api/v1/audits', auditRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/logs', logRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });

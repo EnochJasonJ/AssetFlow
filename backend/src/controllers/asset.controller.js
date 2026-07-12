@@ -40,6 +40,15 @@ export const getAssetHistory = async (req, res, next) => {
 // ALLOCATIONS & TRANSFERS
 // ==========================================
 
+export const getAllocations = async (req, res, next) => {
+  try {
+    const allocations = await assetService.getAllAllocations(req.query);
+    res.status(200).json({ status: 'success', data: allocations });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const allocateAsset = async (req, res, next) => {
   try {
     const asset_id = req.body.asset_id || req.body.assetId;

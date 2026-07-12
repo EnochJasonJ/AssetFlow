@@ -7,6 +7,9 @@ const router = Router();
 
 router.use(protect);
 
+// Get all allocations
+router.get('/', assetController.getAllocations);
+
 // Asset Managers allocate assets
 router.post('/', restrictTo('ADMIN', 'ASSET_MANAGER'), assetController.allocateAsset);
 

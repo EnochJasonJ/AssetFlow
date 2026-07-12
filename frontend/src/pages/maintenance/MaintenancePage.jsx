@@ -22,6 +22,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { getMaintenanceRequests, updateStatus } from '../../services/maintenance'
+import RaiseRequestModal from './RaiseRequestModal'
+import CardActionModal from './CardActionModal'
 
 /* ─── Constants ──────────────────────────────────────────────── */
 
@@ -175,10 +177,13 @@ export default function MaintenancePage() {
 
       {/* Modals — wired in Part 7 */}
       {showRaiseModal && (
-        <RaiseModalPlaceholder onClose={() => setShowRaiseModal(false)} onSuccess={loadRequests} />
+        <RaiseRequestModal
+          onClose={() => setShowRaiseModal(false)}
+          onSuccess={loadRequests}
+        />
       )}
       {actionTarget && (
-        <ActionModalPlaceholder
+        <CardActionModal
           request={actionTarget.request}
           action={actionTarget.action}
           onClose={() => setActionTarget(null)}
@@ -384,23 +389,7 @@ function RejectedList({ requests, loading }) {
   )
 }
 
-/* ─── Modal placeholders (replaced in Part 7) ───────────────── */
-
-function RaiseModalPlaceholder({ onClose }) {
-  return (
-    <ModalShell title="Raise Maintenance Request" onClose={onClose}>
-      <p className="text-gray-400 text-sm py-4">Raise request form coming in Part 7…</p>
-    </ModalShell>
-  )
-}
-
-function ActionModalPlaceholder({ request, action, onClose }) {
-  return (
-    <ModalShell title={`${action}: ${request.asset?.name ?? 'Asset'}`} onClose={onClose}>
-      <p className="text-gray-400 text-sm py-4">Action modal coming in Part 7…</p>
-    </ModalShell>
-  )
-}
+// RaiseRequestModal and CardActionModal are in their own files
 
 function ModalShell({ title, onClose, children }) {
   return (

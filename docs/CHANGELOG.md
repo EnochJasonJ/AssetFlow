@@ -30,6 +30,61 @@ Short paragraph of what was done and why.
 
 ## Entries (Latest First)
 
+### [2026-07-12 12:52] — Hari — [Screen 4] Asset Registration & Directory
+**Type:** Feature
+**Files Changed:**
+- `frontend/src/pages/assets/AssetDirectoryPage.jsx` (new — Screen 4)
+- `frontend/src/App.jsx` (replaced placeholder with real page for /assets)
+
+**Summary:**
+Built Screen 4 — Asset Registration & Directory. Includes: asset register form (with auto-tag notice), searchable/filterable table by name/tag/serial/category/status, status summary chips, and a side drawer showing per-asset allocation history + maintenance history in tabs. Build: ✅ 0 errors.
+
+**Details:**
+- Register form: name, category, serial, QR, acquisition date/cost, condition, location, photo, is_bookable toggle
+- Asset tag field is display-only with a notice — auto-generated server-side (AF-0001 format)
+- Filters: free-text search, status dropdown, category dropdown
+- Status chips above table show live count per status, click to filter
+- Side drawer: 2 tabs — Allocation History (who held it, when) + Maintenance History (all requests)
+- Edit asset: same form modal, pre-filled with existing data
+
+---
+
+### [2026-07-12 12:50] — Hari — Custom hooks: useAssets, useNotifications, useLookups
+**Type:** Feature
+**Files Changed:**
+- `frontend/src/hooks/useAssets.js` (new)
+- `frontend/src/hooks/useNotifications.js` (new — realtime Supabase subscription)
+- `frontend/src/hooks/useLookups.js` (new — useDepartments, useCategories, useEmployees)
+
+**Summary:**
+Built all reusable custom hooks for the frontend. Every teammate imports these instead of writing raw Supabase queries in their components. useNotifications has a realtime Supabase channel subscription for live unread count.
+
+---
+
+### [2026-07-12 12:49] — Hari — Services layer: all API call functions for all modules
+**Type:** Feature
+**Files Changed:**
+- `frontend/src/services/assetService.js` (new)
+- `frontend/src/services/allocationService.js` (new)
+- `frontend/src/services/bookingService.js` (new — includes client-side overlap check helper)
+- `frontend/src/services/maintenanceService.js` (new)
+- `frontend/src/services/auditService.js` (new — closeCycle calls Jason's backend API)
+- `frontend/src/services/reportService.js` (new — analytics + notifications + activity logs)
+
+**Summary:**
+Built the complete services layer — all Supabase query functions organized by module. Teammates import from their relevant service file instead of writing raw queries. Notes added in each service file about which operations MUST go through Jason's backend API (e.g. closeCycle atomic transaction, allocation conflict check).
+
+---
+
+### [2026-07-12 12:48] — Hari — [Auth] Reset Password page
+**Type:** Feature
+**Files Changed:**
+- `frontend/src/pages/auth/ResetPasswordPage.jsx` (new)
+- `frontend/src/App.jsx` (added /reset-password route)
+
+**Summary:**
+Built the Reset Password page that Supabase redirects to after a user clicks the forgot-password email link. Validates the session from the URL hash, lets user set a new password, shows success screen and auto-redirects to login after 3 seconds.
+
 ### [2026-07-12 12:03] — Hari — Frontend Foundation: Shared Components + Screens 1, 2, 3
 **Type:** Feature
 **Files Changed:**

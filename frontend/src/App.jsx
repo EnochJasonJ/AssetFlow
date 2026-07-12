@@ -13,6 +13,8 @@ import OrgSetupPage from './pages/org/OrgSetupPage'
 
 import AssetDirectoryPage from './pages/assets/AssetDirectoryPage'
 import BookingPage from './pages/bookings/BookingPage'
+import ReportsPage from './pages/reports/ReportsPage'
+import ActivityLogsPage from './pages/logs/ActivityLogsPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 // Route guard — redirects to /login if not authenticated
@@ -47,8 +49,8 @@ export default function App() {
           {/* Protected — Devipriya (placeholders until she builds them) */}
           <Route path="/assets"      element={<PrivateRoute><AssetDirectoryPage /></PrivateRoute>} />
           <Route path="/bookings"    element={<PrivateRoute><BookingPage /></PrivateRoute>} />
-          <Route path="/reports"     element={<PrivateRoute><PlaceholderPage name="Reports & Analytics" owner="Devipriya" screen={9} /></PrivateRoute>} />
-          <Route path="/logs"        element={<PrivateRoute><PlaceholderPage name="Activity Logs" owner="Devipriya" screen={10} /></PrivateRoute>} />
+          <Route path="/reports"     element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
+          <Route path="/logs"        element={<PrivateRoute><ActivityLogsPage /></PrivateRoute>} />
 
           {/* Protected — Abinivas (placeholders until he builds them) */}
           <Route path="/allocations" element={<PrivateRoute><PlaceholderPage name="Asset Allocation & Transfer" owner="Abinivas" screen={5} /></PrivateRoute>} />

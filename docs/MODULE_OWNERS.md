@@ -24,13 +24,13 @@
 | **Screen 1** — Login / Signup | Hari | 🔴 Not started | `/login`, `/signup` | Supabase Auth, Employee-only signup, no role picker |
 | **Screen 2** — Dashboard | Hari | 🔴 Not started | `/dashboard` | KPI cards, overdue returns, quick actions |
 | **Screen 3** — Organization Setup | Hari | 🔴 Not started | `/org` | Admin-only: 3 tabs — Depts, Categories, Employee Dir + role promotion |
-| **Screen 4** — Asset Registration & Directory | Devipriya | 🔴 Not started | `/assets` | Auto asset tag AF-0001 (display only), search/filter, per-asset history |
+| **Screen 4** — Asset Registration & Directory | Devipriya | 🟢 Done / merged | `/assets` | Auto asset tag AF-0001 (display only), search/filter, per-asset history |
 | **Screen 5** — Asset Allocation & Transfer | Abinivas | 🔴 Not started | `/allocations` | Conflict blocking, transfer flow, return + condition notes, overdue flags |
-| **Screen 6** — Resource Booking | Devipriya | 🔴 Not started | `/bookings` | Calendar view, overlap validation, cancel/reschedule |
+| **Screen 6** — Resource Booking | Devipriya | 🟢 Done / merged | `/bookings` | Calendar view, overlap validation, cancel/reschedule |
 | **Screen 7** — Maintenance Management | Abinivas | 🔴 Not started | `/maintenance` | Kanban approval board, asset status sync |
 | **Screen 8** — Asset Audit | Abinivas | 🔴 Not started | `/audit` | Create cycle, assign auditors, per-asset verify, atomic close |
-| **Screen 9** — Reports & Analytics | Devipriya | 🔴 Not started | `/reports` | Charts, heatmap, CSV export |
-| **Screen 10** — Activity Logs & Notifications | Devipriya | 🔴 Not started | `/logs` | Notification feed, full audit trail |
+| **Screen 9** — Reports & Analytics | Devipriya | 🟢 Done / merged | `/reports` | Charts, heatmap, CSV export |
+| **Screen 10** — Activity Logs & Notifications | Devipriya | 🟢 Done / merged | `/logs` | Notification feed, full audit trail |
 | **App Router setup** | Hari | 🔴 Not started | `App.jsx` | Hari sets up base routes, others register their routes |
 
 ---

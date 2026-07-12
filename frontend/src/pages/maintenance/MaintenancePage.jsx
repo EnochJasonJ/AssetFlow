@@ -1,52 +1,30 @@
-/**
- * MaintenancePage — Screen 7: Maintenance Management
- *
- * Layout:
- *   - Header with "Raise Request" button
- *   - Tab switcher: Main Board | Rejected
- *   - Main Board: Kanban with 5 columns
- *       Pending | Approved | Technician Assigned | In Progress | Resolved
- *   - Rejected tab: separate list (not in Kanban)
- *
- * Each card shows:
- *   asset name, issue description, priority badge, raised by, raised at
- *
- * Card action buttons (Part 7):
- *   Asset Manager: Approve/Reject (Pending), Assign Tech (Approved),
- *                  In Progress / Resolve (TechnicianAssigned)
- *
- * Business rule (PRODUCT_CONTEXT §8):
- *   Maintenance APPROVAL (not raise) flips asset to UnderMaintenance.
- *   This is enforced server-side — frontend just shows the result.
- */
-
+// Screen 7 — Maintenance Management (Kanban board)
+// Owner: Abinivas | UI fixed by Hari — wrapped in AppLayout + CSS variable system
 import { useState, useEffect, useCallback } from 'react'
-import { getMaintenanceRequests, updateStatus } from '../../services/maintenance'
+import AppLayout from '../../components/shared/AppLayout'
+import { getMaintenanceRequests } from '../../services/maintenance'
 import RaiseRequestModal from './RaiseRequestModal'
 import CardActionModal from './CardActionModal'
 
-/* ─── Constants ──────────────────────────────────────────────── */
-
 const KANBAN_COLUMNS = [
-  { key: 'Pending',            label: 'Pending',             color: 'border-t-amber-500' },
-  { key: 'Approved',           label: 'Approved',            color: 'border-t-blue-500' },
-  { key: 'TechnicianAssigned', label: 'Technician Assigned', color: 'border-t-violet-500' },
-  { key: 'InProgress',         label: 'In Progress',         color: 'border-t-orange-500' },
-  { key: 'Resolved',           label: 'Resolved',            color: 'border-t-emerald-500' },
+  { key: 'Pending',            label: 'Pending',             accent: 'var(--warning)' },
+  { key: 'Approved',           label: 'Approved',            accent: 'var(--info, #3b82f6)' },
+  { key: 'TechnicianAssigned', label: 'Technician Assigned', accent: 'var(--accent)' },
+  { key: 'InProgress',         label: 'In Progress',         accent: '#f97316' },
+  { key: 'Resolved',           label: 'Resolved',            accent: 'var(--success)' },
 ]
 
-const PRIORITY_STYLES = {
-  Low:      { dot: 'bg-emerald-400', text: 'text-emerald-400', badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
-  Medium:   { dot: 'bg-yellow-400',  text: 'text-yellow-400',  badge: 'bg-yellow-500/15  text-yellow-400  border-yellow-500/30' },
-  High:     { dot: 'bg-orange-400',  text: 'text-orange-400',  badge: 'bg-orange-500/15  text-orange-400  border-orange-500/30' },
-  Critical: { dot: 'bg-red-400',     text: 'text-red-400',     badge: 'bg-red-500/15     text-red-400     border-red-500/30' },
+const PRIORITY_COLORS = {
+  Low:      { bg: 'rgba(16,185,129,0.12)', text: '#34d399', border: 'rgba(16,185,129,0.3)' },
+  Medium:   { bg: 'rgba(234,179,8,0.12)',  text: '#facc15', border: 'rgba(234,179,8,0.3)' },
+  High:     { bg: 'rgba(249,115,22,0.12)', text: '#fb923c', border: 'rgba(249,115,22,0.3)' },
+  Critical: { bg: 'rgba(239,68,68,0.12)',  text: '#f87171', border: 'rgba(239,68,68,0.3)' },
 }
 
 function PriorityBadge({ priority }) {
-  const s = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.Low
+  const c = PRIORITY_COLORS[priority] ?? PRIORITY_COLORS.Low
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${s.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+    <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: 99, padding: '0.1rem 0.55rem', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
       {priority}
     </span>
   )
@@ -58,353 +36,161 @@ function fmtRelative(dateStr) {
   const hours = Math.floor(diff / 3_600_000)
   if (hours < 1) return 'Just now'
   if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
-
-/* ─── Main page ──────────────────────────────────────────────── */
-
-export default function MaintenancePage() {
-  const [requests, setRequests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('board') // 'board' | 'rejected'
-
-  // Modal state (wired in Part 7)
-  const [showRaiseModal, setShowRaiseModal] = useState(false)
-  const [actionTarget, setActionTarget] = useState(null) // { request, action }
-
-  const loadRequests = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await getMaintenanceRequests()
-      setRequests(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { loadRequests() }, [loadRequests])
-
-  const boardRequests  = requests.filter(r => r.status !== 'Rejected')
-  const rejectedRequests = requests.filter(r => r.status === 'Rejected')
-
-  // Count by column for header badges
-  const countByStatus = {}
-  requests.forEach(r => { countByStatus[r.status] = (countByStatus[r.status] ?? 0) + 1 })
-
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
-
-      {/* ── Page header ── */}
-      <div className="border-b border-gray-800 bg-gray-900/50 shrink-0">
-        <div className="max-w-screen-xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Maintenance Management</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Track and manage asset maintenance requests</p>
-          </div>
-          <button
-            id="btn-raise-request"
-            onClick={() => setShowRaiseModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Raise Request
-          </button>
-        </div>
-      </div>
-
-      {/* ── Tabs ── */}
-      <div className="border-b border-gray-800 bg-gray-900/30 shrink-0">
-        <div className="max-w-screen-xl mx-auto px-6 flex gap-1 pt-2">
-          {[
-            { key: 'board',    label: 'Main Board', count: boardRequests.length },
-            { key: 'rejected', label: 'Rejected',   count: rejectedRequests.length },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              id={`tab-maintenance-${tab.key}`}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors relative flex items-center gap-2 ${
-                activeTab === tab.key
-                  ? 'text-violet-400 bg-gray-800 border-b-2 border-violet-500'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
-              }`}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                  activeTab === tab.key ? 'bg-violet-500/30 text-violet-300' : 'bg-gray-700 text-gray-400'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Error banner ── */}
-      {error && (
-        <div className="mx-6 mt-4 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {error}
-          <button onClick={loadRequests} className="ml-auto underline hover:no-underline">Retry</button>
-        </div>
-      )}
-
-      {/* ── Content ── */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'board' && (
-          <KanbanBoard
-            requests={boardRequests}
-            loading={loading}
-            onAction={(request, action) => setActionTarget({ request, action })}
-            onRefresh={loadRequests}
-          />
-        )}
-        {activeTab === 'rejected' && (
-          <RejectedList requests={rejectedRequests} loading={loading} />
-        )}
-      </div>
-
-      {/* Modals — wired in Part 7 */}
-      {showRaiseModal && (
-        <RaiseRequestModal
-          onClose={() => setShowRaiseModal(false)}
-          onSuccess={loadRequests}
-        />
-      )}
-      {actionTarget && (
-        <CardActionModal
-          request={actionTarget.request}
-          action={actionTarget.action}
-          onClose={() => setActionTarget(null)}
-          onSuccess={loadRequests}
-        />
-      )}
-    </div>
-  )
-}
-
-/* ─── Kanban Board ───────────────────────────────────────────── */
-
-function KanbanBoard({ requests, loading, onAction, onRefresh }) {
-  return (
-    <div className="h-full overflow-x-auto">
-      <div className="flex gap-4 p-6 min-w-max h-full">
-        {KANBAN_COLUMNS.map(col => {
-          const cards = requests.filter(r => r.status === col.key)
-          return (
-            <KanbanColumn
-              key={col.key}
-              column={col}
-              cards={cards}
-              loading={loading}
-              onAction={onAction}
-            />
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function KanbanColumn({ column, cards, loading, onAction }) {
-  return (
-    <div className={`w-72 shrink-0 flex flex-col bg-gray-900 border border-gray-800 border-t-4 ${column.color} rounded-xl overflow-hidden`}>
-      {/* Column header */}
-      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-200">{column.label}</span>
-        <span className="px-2 py-0.5 bg-gray-800 text-gray-400 text-xs font-bold rounded-full">
-          {loading ? '…' : cards.length}
-        </span>
-      </div>
-
-      {/* Cards */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {loading && (
-          <div className="flex items-center justify-center py-8">
-            <svg className="w-4 h-4 animate-spin text-gray-600" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          </div>
-        )}
-        {!loading && cards.length === 0 && (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-xs text-gray-600">No requests</p>
-          </div>
-        )}
-        {!loading && cards.map(card => (
-          <MaintenanceCard key={card.id} request={card} status={column.key} onAction={onAction} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Maintenance Card ───────────────────────────────────────── */
-
-function MaintenanceCard({ request, status, onAction }) {
-  return (
-    <div
-      id={`card-maintenance-${request.id}`}
-      className="bg-gray-800 border border-gray-700 rounded-xl p-3.5 space-y-3 hover:border-gray-600 transition-colors"
-    >
-      {/* Asset + priority */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-xs font-mono text-violet-400">{request.asset?.asset_tag ?? '—'}</p>
-          <p className="text-sm font-semibold text-white truncate">{request.asset?.name ?? 'Unknown Asset'}</p>
-        </div>
-        <PriorityBadge priority={request.priority ?? 'Low'} />
-      </div>
-
-      {/* Issue description */}
-      <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-        {request.issue_description}
-      </p>
-
-      {/* Technician (if assigned) */}
-      {request.technician_name && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span>{request.technician_name}</span>
-        </div>
-      )}
-
-      {/* Meta */}
-      <div className="flex items-center justify-between text-xs text-gray-600">
-        <span>{request.raised_by?.name ?? 'Unknown'}</span>
-        <span>{fmtRelative(request.raised_at)}</span>
-      </div>
-
-      {/* Action buttons — role-aware (wired in Part 7) */}
-      <CardActions request={request} status={status} onAction={onAction} />
-    </div>
-  )
-}
-
-/**
- * CardActions — shows action buttons based on current status.
- * Role check is a simple approach: try to determine from the session.
- * Full role guard will come when Hari's AuthContext is available.
- * For now we show all actions and let the server reject unauthorized ones (403).
- */
-function CardActions({ request, status, onAction }) {
-  const actions = getActionsForStatus(status)
-  if (actions.length === 0) return null
-
-  return (
-    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-700/50">
-      {actions.map(action => (
-        <button
-          key={action.key}
-          id={`btn-${action.key}-${request.id}`}
-          onClick={() => onAction(request, action.key)}
-          className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${action.cls}`}
-        >
-          {action.label}
-        </button>
-      ))}
-    </div>
-  )
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 function getActionsForStatus(status) {
   switch (status) {
-    case 'Pending':
-      return [
-        { key: 'approve', label: 'Approve', cls: 'bg-blue-600/30 hover:bg-blue-600/50 text-blue-300' },
-        { key: 'reject',  label: 'Reject',  cls: 'bg-red-600/20  hover:bg-red-600/40  text-red-400' },
-      ]
-    case 'Approved':
-      return [
-        { key: 'assign', label: 'Assign Technician', cls: 'bg-violet-600/30 hover:bg-violet-600/50 text-violet-300' },
-      ]
-    case 'TechnicianAssigned':
-      return [
-        { key: 'inprogress', label: 'Mark In Progress', cls: 'bg-orange-600/30 hover:bg-orange-600/50 text-orange-300' },
-      ]
-    case 'InProgress':
-      return [
-        { key: 'resolve', label: 'Mark Resolved', cls: 'bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300' },
-      ]
-    default:
-      return []
+    case 'Pending':            return [{ key: 'approve', label: 'Approve' }, { key: 'reject', label: 'Reject', danger: true }]
+    case 'Approved':           return [{ key: 'assign', label: 'Assign Technician' }]
+    case 'TechnicianAssigned': return [{ key: 'inprogress', label: 'Start Work' }]
+    case 'InProgress':         return [{ key: 'resolve', label: 'Mark Resolved' }]
+    default: return []
   }
 }
 
-/* ─── Rejected list (separate tab) ──────────────────────────── */
-
-function RejectedList({ requests, loading }) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-gray-500 text-sm">
-        <svg className="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        Loading…
-      </div>
-    )
-  }
-
+function MaintenanceCard({ request, status, onAction }) {
+  const actions = getActionsForStatus(status)
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-6 space-y-3">
-      {requests.length === 0 && (
-        <div className="text-center py-16 text-gray-600 text-sm">No rejected requests</div>
-      )}
-      {requests.map(r => (
-        <div key={r.id} className="flex items-start gap-4 p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
-          <div className="p-2 rounded-lg bg-red-500/10">
-            <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-white">{r.asset?.name ?? 'Unknown Asset'}</span>
-              <span className="text-xs font-mono text-violet-400">{r.asset?.asset_tag}</span>
-              <PriorityBadge priority={r.priority ?? 'Low'} />
-            </div>
-            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{r.issue_description}</p>
-            <p className="text-xs text-gray-600 mt-1">
-              By {r.raised_by?.name ?? '—'} · {fmtRelative(r.raised_at)}
-            </p>
-          </div>
+    <div id={`card-maintenance-${request.id}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--accent)', marginBottom: '0.1rem' }}>{request.asset?.asset_tag ?? '—'}</div>
+          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{request.asset?.name ?? 'Unknown Asset'}</div>
         </div>
-      ))}
+        <PriorityBadge priority={request.priority ?? 'Low'} />
+      </div>
+
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        {request.issue_description}
+      </p>
+
+      {request.technician_name && (
+        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>🔧 {request.technician_name}</div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', paddingTop: '0.25rem', borderTop: '1px solid var(--border)' }}>
+        <span>{request.raised_by?.name ?? '—'}</span>
+        <span>{fmtRelative(request.raised_at)}</span>
+      </div>
+
+      {actions.length > 0 && (
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {actions.map(a => (
+            <button
+              key={a.key}
+              id={`btn-${a.key}-${request.id}`}
+              onClick={() => onAction(request, a.key)}
+              className={a.danger ? 'btn btn-sm btn-ghost' : 'btn btn-sm btn-secondary'}
+              style={a.danger ? { color: 'var(--danger)' } : {}}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-// RaiseRequestModal and CardActionModal are in their own files
-
-function ModalShell({ title, onClose, children }) {
+function KanbanColumn({ column, cards, loading }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h2 className="text-base font-semibold text-white capitalize">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="px-6 py-5">{children}</div>
+    <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg-card)', border: '1px solid var(--border)', borderTop: `3px solid ${column.accent}`, borderRadius: 12, overflow: 'hidden', maxHeight: 'calc(100vh - 220px)' }}>
+      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{column.label}</span>
+        <span style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)', borderRadius: 99, padding: '0.1rem 0.5rem', fontSize: '0.72rem', fontWeight: 700 }}>
+          {loading ? '…' : cards.length}
+        </span>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}><div className="spinner" /></div>}
+        {!loading && cards.length === 0 && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>No requests</p>}
+        {!loading && cards.map(card => <MaintenanceCard key={card.id} request={card} status={column.key} onAction={() => {}} />)}
       </div>
     </div>
+  )
+}
+
+export default function MaintenancePage() {
+  const [requests, setRequests] = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
+  const [activeTab, setActiveTab] = useState('board')
+  const [showRaiseModal, setShowRaiseModal] = useState(false)
+  const [actionTarget, setActionTarget]     = useState(null)
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true); setError(null)
+    try { setRequests(await getMaintenanceRequests()) }
+    catch (err) { setError(err.message) }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { loadRequests() }, [loadRequests])
+
+  const boardRequests    = requests.filter(r => r.status !== 'Rejected')
+  const rejectedRequests = requests.filter(r => r.status === 'Rejected')
+
+  return (
+    <AppLayout title="Maintenance">
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: '1.25rem' }}>
+        <div>
+          <h2>Maintenance Management</h2>
+          <p>Track and manage asset maintenance requests.</p>
+        </div>
+        <button className="btn btn-primary" id="btn-raise-request" onClick={() => setShowRaiseModal(true)}>
+          ＋ Raise Request
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="tabs" style={{ marginBottom: '1.25rem' }}>
+        <button className={`tab${activeTab === 'board' ? ' active' : ''}`} onClick={() => setActiveTab('board')}>
+          Main Board <span style={{ marginLeft: '0.4rem', background: 'var(--bg-surface)', borderRadius: 99, padding: '0 0.45rem', fontSize: '0.7rem', fontWeight: 700 }}>{boardRequests.length}</span>
+        </button>
+        <button className={`tab${activeTab === 'rejected' ? ' active' : ''}`} onClick={() => setActiveTab('rejected')}>
+          Rejected <span style={{ marginLeft: '0.4rem', background: 'var(--bg-surface)', borderRadius: 99, padding: '0 0.45rem', fontSize: '0.7rem', fontWeight: 700 }}>{rejectedRequests.length}</span>
+        </button>
+      </div>
+
+      {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error} <button className="btn btn-sm btn-ghost" onClick={loadRequests} style={{ marginLeft: 8 }}>Retry</button></div>}
+
+      {/* Kanban board */}
+      {activeTab === 'board' && (
+        <div style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', minWidth: 'max-content' }}>
+            {KANBAN_COLUMNS.map(col => (
+              <KanbanColumn key={col.key} column={col} cards={boardRequests.filter(r => r.status === col.key)} loading={loading} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rejected list */}
+      {activeTab === 'rejected' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><div className="spinner" /></div>}
+          {!loading && rejectedRequests.length === 0 && <div className="empty-state"><div className="empty-icon">✅</div><p>No rejected requests.</p></div>}
+          {!loading && rejectedRequests.map(r => (
+            <div key={r.id} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '1rem 1.25rem' }}>
+              <div style={{ padding: '0.5rem', background: 'rgba(239,68,68,0.1)', borderRadius: 8, fontSize: '1.1rem' }}>✕</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: 700 }}>{r.asset?.name ?? 'Unknown Asset'}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent)' }}>{r.asset?.asset_tag}</span>
+                  <PriorityBadge priority={r.priority ?? 'Low'} />
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>{r.issue_description}</p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>By {r.raised_by?.name ?? '—'} · {fmtRelative(r.raised_at)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showRaiseModal && <RaiseRequestModal onClose={() => setShowRaiseModal(false)} onSuccess={loadRequests} />}
+      {actionTarget  && <CardActionModal request={actionTarget.request} action={actionTarget.action} onClose={() => setActionTarget(null)} onSuccess={loadRequests} />}
+    </AppLayout>
   )
 }

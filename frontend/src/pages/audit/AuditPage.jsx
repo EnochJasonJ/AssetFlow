@@ -1,26 +1,9 @@
-/**
- * AuditPage — Screen 8: Asset Audit
- *
- * Layout:
- *   - Header with "Create Audit Cycle" button
- *   - Cycle list: shows all Open + Closed cycles with scope, date, auditors
- *   - Click a cycle → opens detail view (checklist + discrepancy report + close)
- *
- * Detail view (Parts 10–11):
- *   - Per-asset checklist (Pending / Verified / Missing / Damaged)
- *   - Auto-generated discrepancy report (Missing + Damaged items)
- *   - Close Cycle button (irreversible — fires ConfirmDialog)
- *
- * Business rules (PRODUCT_CONTEXT §9):
- *   - Closing locks the cycle AND updates Missing → Lost atomically (server-side)
- *   - Only Open cycles accept item updates
- */
-
+// Screen 8 — Asset Audit
+// Owner: Abinivas | UI fixed by Hari — wrapped in AppLayout + CSS variable system
 import { useState, useEffect, useCallback } from 'react'
+import AppLayout from '../../components/shared/AppLayout'
 import { getAuditCycles, createAuditCycle, closeAuditCycle } from '../../services/audit'
 import AuditChecklist from './AuditChecklist'
-
-/* ─── Helpers ────────────────────────────────────────────────── */
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -28,545 +11,255 @@ function fmtDate(d) {
 }
 
 function CycleBadge({ status }) {
-  const styles = {
-    Open:   'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-    Closed: 'bg-gray-500/15   text-gray-500   border-gray-700',
-  }
+  const isOpen = status === 'Open'
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[status] ?? styles.Closed}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status === 'Open' ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+    <span style={{
+      background: isOpen ? 'rgba(16,185,129,0.12)' : 'rgba(107,114,128,0.12)',
+      color: isOpen ? '#34d399' : '#9ca3af',
+      border: `1px solid ${isOpen ? 'rgba(16,185,129,0.3)' : 'rgba(107,114,128,0.3)'}`,
+      borderRadius: 99, padding: '0.12rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: '0.35rem'
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: isOpen ? '#34d399' : '#9ca3af', display: 'inline-block' }} />
       {status}
     </span>
   )
 }
 
-/* ─── Main Page ──────────────────────────────────────────────── */
-
-export default function AuditPage() {
-  const [cycles, setCycles] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [selectedCycleId, setSelectedCycleId] = useState(null)
-
-  const selectedCycle = cycles.find(c => c.id === selectedCycleId) ?? null
-
-  const loadCycles = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await getAuditCycles()
-      setCycles(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { loadCycles() }, [loadCycles])
-
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      {/* ── Page header ── */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Asset Audit</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Create and manage audit cycles, verify assets, close with discrepancy report</p>
-          </div>
-          <button
-            id="btn-create-audit-cycle"
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Create Audit Cycle
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Error */}
-        {error && (
-          <div className="mb-6 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {error}
-            <button onClick={loadCycles} className="ml-auto underline">Retry</button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ── Left panel: Cycle list ── */}
-          <div className="lg:col-span-1 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider px-1">Audit Cycles</h2>
-
-            {loading && (
-              <div className="flex items-center justify-center py-10 text-gray-600 text-sm">
-                <svg className="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Loading…
-              </div>
-            )}
-
-            {!loading && cycles.length === 0 && (
-              <div className="text-center py-10 text-gray-600 text-sm">
-                No audit cycles yet. Create one to get started.
-              </div>
-            )}
-
-            {!loading && cycles.map(cycle => (
-              <CycleCard
-                key={cycle.id}
-                cycle={cycle}
-                selected={cycle.id === selectedCycleId}
-                onClick={() => setSelectedCycleId(cycle.id === selectedCycleId ? null : cycle.id)}
-              />
-            ))}
-          </div>
-
-          {/* ── Right panel: Cycle detail ── */}
-          <div className="lg:col-span-2">
-            {!selectedCycle ? (
-              <div className="flex flex-col items-center justify-center h-64 text-center text-gray-600 border border-dashed border-gray-800 rounded-2xl">
-                <svg className="w-8 h-8 mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-                <p className="text-sm">Select an audit cycle to view details</p>
-                <p className="text-xs mt-1 text-gray-700">or create a new cycle</p>
-              </div>
-            ) : (
-              <CycleDetail
-                cycle={selectedCycle}
-                onCycleUpdate={loadCycles}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Create modal */}
-      {showCreateModal && (
-        <CreateAuditCycleModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={loadCycles}
-        />
-      )}
-    </div>
-  )
-}
-
-/* ─── Cycle card (left panel) ────────────────────────────────── */
-
+/* ─── Cycle Card (left panel) ─────────────────────────── */
 function CycleCard({ cycle, selected, onClick }) {
-  const auditorCount = cycle.auditors?.length ?? 0
   return (
     <button
       id={`cycle-card-${cycle.id}`}
       onClick={onClick}
-      className={`w-full text-left p-4 rounded-xl border transition-all ${
-        selected
-          ? 'bg-violet-600/10 border-violet-500/50 shadow-lg shadow-violet-500/5'
-          : 'bg-gray-900 border-gray-800 hover:border-gray-700 hover:bg-gray-900/80'
-      }`}
+      style={{
+        width: '100%', textAlign: 'left', padding: '1rem', borderRadius: 10,
+        border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+        background: selected ? 'rgba(139,92,246,0.08)' : 'var(--bg-card)',
+        cursor: 'pointer', transition: 'all 0.15s', display: 'block'
+      }}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-sm font-semibold text-white truncate flex-1">
-          {cycle.name ?? `Audit Cycle ${fmtDate(cycle.start_date)}`}
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.6rem' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+          {cycle.name ?? `Audit — ${fmtDate(cycle.start_date)}`}
+        </span>
         <CycleBadge status={cycle.status} />
       </div>
-
-      {/* Scope */}
-      <div className="space-y-1">
-        {cycle.scope_department?.name && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            {cycle.scope_department.name}
-          </div>
-        )}
-        {cycle.scope_location && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            </svg>
-            {cycle.scope_location}
-          </div>
-        )}
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          {fmtDate(cycle.start_date)} – {fmtDate(cycle.end_date)}
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+        {cycle.scope_department?.name && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🏢 {cycle.scope_department.name}</span>}
+        {cycle.scope_location && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📍 {cycle.scope_location}</span>}
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📅 {fmtDate(cycle.start_date)} – {fmtDate(cycle.end_date)}</span>
+        {cycle.auditors?.length > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>👥 {cycle.auditors.length} auditor{cycle.auditors.length !== 1 ? 's' : ''}</span>}
       </div>
-
-      {/* Auditors count */}
-      {auditorCount > 0 && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-600">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          {auditorCount} auditor{auditorCount !== 1 ? 's' : ''}
+      {/* Progress bar */}
+      {cycle.total_items > 0 && (
+        <div style={{ marginTop: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+            <span>{cycle.verified ?? 0}/{cycle.total_items} verified</span>
+            <span style={{ color: cycle.missing > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{cycle.missing ?? 0} missing</span>
+          </div>
+          <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-surface)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${((cycle.verified ?? 0) / cycle.total_items) * 100}%`, background: 'var(--success)', borderRadius: 2, transition: 'width 0.3s' }} />
+          </div>
         </div>
       )}
     </button>
   )
 }
 
-/* ─── Cycle detail panel (right) — placeholder for Parts 10-11 ── */
-
+/* ─── Cycle Detail Panel (right) ─────────────────────── */
 function CycleDetail({ cycle, onCycleUpdate }) {
   const [showConfirm, setShowConfirm] = useState(false)
-  const [closing, setClosing] = useState(false)
-  const [closeResult, setCloseResult] = useState(null) // discrepancy summary
-  const [closeError, setCloseError] = useState(null)
+  const [closing, setClosing]         = useState(false)
+  const [closeResult, setCloseResult] = useState(null)
+  const [closeError, setCloseError]   = useState(null)
 
   async function handleClose() {
-    setClosing(true)
-    setCloseError(null)
+    setClosing(true); setCloseError(null)
     try {
       const result = await closeAuditCycle(cycle.id)
       setCloseResult(result)
       setShowConfirm(false)
-      onCycleUpdate() // refresh cycle list to show Closed status
+      onCycleUpdate()
     } catch (err) {
       setCloseError(err.message)
       setShowConfirm(false)
-    } finally {
-      setClosing(false)
-    }
+    } finally { setClosing(false) }
   }
+
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+    <div className="card" style={{ padding: 0 }}>
       {/* Cycle header */}
-      <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold text-white">
-              {cycle.name ?? `Audit — ${fmtDate(cycle.start_date)}`}
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+            <h3 style={{ margin: 0 }}>{cycle.name ?? `Audit — ${fmtDate(cycle.start_date)}`}</h3>
             <CycleBadge status={cycle.status} />
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             {fmtDate(cycle.start_date)} – {fmtDate(cycle.end_date)}
             {cycle.scope_department?.name ? ` · ${cycle.scope_department.name}` : ''}
             {cycle.scope_location ? ` · ${cycle.scope_location}` : ''}
           </p>
         </div>
-
-        {/* Close Cycle button — only for Open cycles */}
         {cycle.status === 'Open' && (
           <button
             id={`btn-close-cycle-${cycle.id}`}
+            className="btn btn-sm btn-ghost"
+            style={{ color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
             onClick={() => setShowConfirm(true)}
             disabled={closing}
-            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Close Cycle
+            🔒 Close Cycle
           </button>
         )}
       </div>
 
-
       {/* Auditors */}
       {cycle.auditors?.length > 0 && (
-        <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-600">Auditors:</span>
-          {cycle.auditors.map(a => (
-            <span key={a.id} className="px-2 py-0.5 bg-gray-800 text-gray-300 text-xs rounded-full">
+        <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Auditors:</span>
+          {cycle.auditors.map((a, i) => (
+            <span key={a.id ?? i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 99, padding: '0.15rem 0.6rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               {a.name}
             </span>
           ))}
         </div>
       )}
 
-      {/* Checklist & discrepancy report */}
-      <div className="px-6 py-6">
-        {/* Close error */}
-        {closeError && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
-            Failed to close cycle: {closeError}
-          </div>
-        )}
-
-        {/* Post-close summary */}
+      <div style={{ padding: '1.5rem' }}>
+        {closeError && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>Failed to close: {closeError}</div>}
         {closeResult && (
-          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-2">
-            <p className="text-sm font-semibold text-emerald-300">Audit Cycle Closed</p>
-            <p className="text-xs text-emerald-400">
-              {closeResult.missing_count ?? 0} Missing → marked Lost &nbsp;·&nbsp;
-              {closeResult.damaged_count ?? 0} Damaged recorded
-            </p>
+          <div className="alert" style={{ marginBottom: '1.25rem', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#34d399', borderRadius: 8, padding: '0.75rem 1rem' }}>
+            ✅ Audit Cycle Closed — {closeResult.missing_count ?? 0} Missing → Lost · {closeResult.damaged_count ?? 0} Damaged recorded
           </div>
         )}
-
         <AuditChecklist cycleId={cycle.id} isOpen={cycle.status === 'Open'} />
       </div>
 
-      {/* Irreversible Confirm Dialog */}
+      {/* Confirm Dialog */}
       {showConfirm && (
-        <CloseCycleConfirmDialog
-          cycleName={cycle.name ?? `Audit ${cycle.id.slice(0, 8)}`}
-          onConfirm={handleClose}
-          onCancel={() => setShowConfirm(false)}
-          closing={closing}
-        />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="card" style={{ maxWidth: 420, width: '100%', border: '1px solid rgba(239,68,68,0.4)' }}>
+            <div style={{ textAlign: 'center', padding: '1.5rem 1.5rem 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚠️</div>
+              <h3 style={{ margin: '0 0 0.25rem' }}>Close Audit Cycle?</h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>{cycle.name ?? `Audit ${cycle.id.slice(0, 8)}`}</p>
+            </div>
+            <div style={{ margin: '1.25rem 1.5rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '0.9rem' }}>
+              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.5rem' }}>This action is irreversible</p>
+              <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.78rem', color: 'rgba(239,68,68,0.8)', lineHeight: 1.7 }}>
+                <li>The cycle will be permanently <strong>locked</strong></li>
+                <li>All <strong>Missing</strong> assets → marked as <strong>Lost</strong></li>
+                <li>Asset status updates happen atomically</li>
+              </ul>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '0 1.5rem 1.5rem' }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowConfirm(false)} disabled={closing}>Cancel</button>
+              <button id="btn-confirm-close-cycle" className="btn btn-primary" style={{ flex: 1, background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleClose} disabled={closing}>
+                {closing ? 'Closing…' : 'Yes, Close Cycle'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
-/* ─── Create Audit Cycle Modal ───────────────────────────────── */
-
+/* ─── Create Audit Cycle Modal ────────────────────────── */
 function CreateAuditCycleModal({ onClose, onSuccess }) {
-  const [departments, setDepartments] = useState([])
-  const [employees, setEmployees] = useState([])
-  const [loadingDeps, setLoadingDeps] = useState(true)
-
-  const [form, setForm] = useState({
-    scopeDepartmentId: '',
-    scopeLocation: '',
-    startDate: '',
-    endDate: '',
-    auditorIds: [],
-  })
+  const [form, setForm] = useState({ scopeDepartmentId: '', scopeLocation: '', startDate: '', endDate: '', auditorIds: [] })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([
-      fetch('/api/v1/departments').then(r => r.ok ? r.json() : []),
-      fetch('/api/v1/users').then(r => r.ok ? r.json() : []),
-    ])
-      .then(([depts, emps]) => {
-        if (!cancelled) { setDepartments(depts); setEmployees(emps) }
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoadingDeps(false) })
-    return () => { cancelled = true }
-  }, [])
+  const MOCK_EMPLOYEES = [
+    { id: 'u1', name: 'Devipriya', email: 'devipriya@company.com' },
+    { id: 'u2', name: 'Abinivas',  email: 'abinivas@company.com' },
+    { id: 'u3', name: 'Hari',      email: 'hari@company.com' },
+    { id: 'u4', name: 'Jason',     email: 'jason@company.com' },
+  ]
 
-  function set(key, value) {
-    setForm(prev => ({ ...prev, [key]: value }))
-    setErrors(prev => ({ ...prev, [key]: undefined }))
-  }
-
-  function toggleAuditor(id) {
-    setForm(prev => ({
-      ...prev,
-      auditorIds: prev.auditorIds.includes(id)
-        ? prev.auditorIds.filter(a => a !== id)
-        : [...prev.auditorIds, id],
-    }))
-  }
+  function set(key, val) { setForm(p => ({ ...p, [key]: val })); setErrors(p => ({ ...p, [key]: undefined })) }
+  function toggleAuditor(id) { setForm(p => ({ ...p, auditorIds: p.auditorIds.includes(id) ? p.auditorIds.filter(a => a !== id) : [...p.auditorIds, id] })) }
 
   function validate() {
-    const errs = {}
-    if (!form.startDate) errs.startDate = 'Start date is required'
-    if (!form.endDate) errs.endDate = 'End date is required'
-    if (form.startDate && form.endDate && form.startDate > form.endDate) errs.endDate = 'End date must be after start date'
-    if (!form.scopeDepartmentId && !form.scopeLocation.trim()) {
-      errs.scope = 'Provide at least a department or location scope'
-    }
-    if (form.auditorIds.length === 0) errs.auditorIds = 'Assign at least one auditor'
-    return errs
+    const e = {}
+    if (!form.startDate) e.startDate = 'Required'
+    if (!form.endDate)   e.endDate   = 'Required'
+    if (form.startDate && form.endDate && form.startDate > form.endDate) e.endDate = 'Must be after start date'
+    if (!form.scopeDepartmentId && !form.scopeLocation.trim()) e.scope = 'Provide at least a department or location'
+    if (form.auditorIds.length === 0) e.auditorIds = 'Assign at least one auditor'
+    return e
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
-
-    setSubmitting(true)
-    setErrors({})
+    setSubmitting(true); setErrors({})
     try {
-      await createAuditCycle({
-        scopeDepartmentId: form.scopeDepartmentId || null,
-        scopeLocation: form.scopeLocation.trim() || null,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        auditorIds: form.auditorIds,
-      })
-      onSuccess()
-      onClose()
-    } catch (err) {
-      setErrors({ submit: err.message })
-    } finally {
-      setSubmitting(false)
-    }
+      await createAuditCycle({ scopeDepartmentId: form.scopeDepartmentId || null, scopeLocation: form.scopeLocation.trim() || null, startDate: form.startDate, endDate: form.endDate, auditorIds: form.auditorIds })
+      onSuccess(); onClose()
+    } catch (err) { setErrors({ submit: err.message }) }
+    finally { setSubmitting(false) }
   }
 
-  const inputCls =
-    'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 ' +
-    'placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-colors'
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
-          <h2 className="text-base font-semibold text-white">Create Audit Cycle</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div className="card" style={{ maxWidth: 520, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0 }}>
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>Create Audit Cycle</h3>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
-
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-
-          {/* Scope — department */}
-          <div className="space-y-1.5">
-            <label htmlFor="audit-scope-dept" className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Scope — Department
-            </label>
-            {departments.length > 0 ? (
-              <select
-                id="audit-scope-dept"
-                value={form.scopeDepartmentId}
-                onChange={e => set('scopeDepartmentId', e.target.value)}
-                className={inputCls}
-              >
-                <option value="">All departments</option>
-                {departments.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                id="audit-scope-dept"
-                type="text"
-                value={form.scopeDepartmentId}
-                onChange={e => set('scopeDepartmentId', e.target.value)}
-                placeholder="Department ID (optional)"
-                className={inputCls}
-              />
-            )}
-          </div>
-
-          {/* Scope — location */}
-          <div className="space-y-1.5">
-            <label htmlFor="audit-scope-location" className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Scope — Location
-            </label>
-            <input
-              id="audit-scope-location"
-              type="text"
-              value={form.scopeLocation}
-              onChange={e => set('scopeLocation', e.target.value)}
-              placeholder="e.g. HQ - Floor 2 (optional)"
-              className={inputCls}
-            />
-          </div>
-          {errors.scope && <p className="text-xs text-red-400">{errors.scope}</p>}
-
-          {/* Date range */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label htmlFor="audit-start-date" className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                Start Date <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="audit-start-date"
-                type="date"
-                value={form.startDate}
-                onChange={e => set('startDate', e.target.value)}
-                className={inputCls}
-              />
-              {errors.startDate && <p className="text-xs text-red-400">{errors.startDate}</p>}
+        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Scope — Department</label>
+              <input type="text" placeholder="e.g. Engineering (optional)" value={form.scopeDepartmentId} onChange={e => set('scopeDepartmentId', e.target.value)} />
             </div>
-            <div className="space-y-1.5">
-              <label htmlFor="audit-end-date" className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                End Date <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="audit-end-date"
-                type="date"
-                value={form.endDate}
-                min={form.startDate}
-                onChange={e => set('endDate', e.target.value)}
-                className={inputCls}
-              />
-              {errors.endDate && <p className="text-xs text-red-400">{errors.endDate}</p>}
+            <div className="form-group">
+              <label>Scope — Location</label>
+              <input type="text" placeholder="e.g. Floor 2 (optional)" value={form.scopeLocation} onChange={e => set('scopeLocation', e.target.value)} />
+            </div>
+          </div>
+          {errors.scope && <p style={{ color: 'var(--danger)', fontSize: '0.8rem', margin: 0 }}>{errors.scope}</p>}
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Start Date *</label>
+              <input type="date" value={form.startDate} onChange={e => set('startDate', e.target.value)} />
+              {errors.startDate && <p style={{ color: 'var(--danger)', fontSize: '0.78rem', margin: '0.25rem 0 0' }}>{errors.startDate}</p>}
+            </div>
+            <div className="form-group">
+              <label>End Date *</label>
+              <input type="date" value={form.endDate} min={form.startDate} onChange={e => set('endDate', e.target.value)} />
+              {errors.endDate && <p style={{ color: 'var(--danger)', fontSize: '0.78rem', margin: '0.25rem 0 0' }}>{errors.endDate}</p>}
             </div>
           </div>
 
-          {/* Auditors multi-select */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Assign Auditors <span className="text-red-400">*</span>
-            </label>
-            {loadingDeps ? (
-              <p className="text-xs text-gray-500">Loading employees…</p>
-            ) : employees.length === 0 ? (
-              <p className="text-xs text-gray-500">No employees found</p>
-            ) : (
-              <div className="max-h-40 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg divide-y divide-gray-700/50">
-                {employees.map(emp => {
-                  const checked = form.auditorIds.includes(emp.id)
-                  return (
-                    <label
-                      key={emp.id}
-                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
-                        checked ? 'bg-violet-600/10' : 'hover:bg-gray-700/50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        id={`auditor-${emp.id}`}
-                        checked={checked}
-                        onChange={() => toggleAuditor(emp.id)}
-                        className="w-3.5 h-3.5 rounded accent-violet-500"
-                      />
-                      <div>
-                        <p className="text-sm text-gray-200">{emp.name}</p>
-                        <p className="text-xs text-gray-500">{emp.email}</p>
-                      </div>
-                    </label>
-                  )
-                })}
-              </div>
-            )}
-            {form.auditorIds.length > 0 && (
-              <p className="text-xs text-violet-400">{form.auditorIds.length} auditor{form.auditorIds.length !== 1 ? 's' : ''} selected</p>
-            )}
-            {errors.auditorIds && <p className="text-xs text-red-400">{errors.auditorIds}</p>}
+          <div className="form-group">
+            <label>Assign Auditors *</label>
+            <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', maxHeight: 180, overflowY: 'auto' }}>
+              {MOCK_EMPLOYEES.map(emp => (
+                <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.9rem', cursor: 'pointer', background: form.auditorIds.includes(emp.id) ? 'rgba(139,92,246,0.1)' : 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
+                  <input type="checkbox" id={`auditor-${emp.id}`} checked={form.auditorIds.includes(emp.id)} onChange={() => toggleAuditor(emp.id)} style={{ width: 'auto' }} />
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem' }}>{emp.name}</p>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>{emp.email}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {form.auditorIds.length > 0 && <p style={{ fontSize: '0.75rem', color: 'var(--accent)', margin: '0.3rem 0 0' }}>{form.auditorIds.length} auditor{form.auditorIds.length !== 1 ? 's' : ''} selected</p>}
+            {errors.auditorIds && <p style={{ color: 'var(--danger)', fontSize: '0.78rem', margin: '0.25rem 0 0' }}>{errors.auditorIds}</p>}
           </div>
 
-          {/* Submit error */}
-          {errors.submit && (
-            <p className="text-sm text-red-400 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">{errors.submit}</p>
-          )}
+          {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
 
-          {/* Footer */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm font-semibold rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              id="btn-submit-create-audit"
-              type="submit"
-              disabled={submitting}
-              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
+          <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem' }}>
+            <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button id="btn-submit-create-audit" type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
               {submitting ? 'Creating…' : 'Create Cycle'}
             </button>
           </div>
@@ -576,78 +269,79 @@ function CreateAuditCycleModal({ onClose, onSuccess }) {
   )
 }
 
-/* ─── Close Cycle Confirm Dialog ─────────────────────────────── */
+/* ─── Main Page ───────────────────────────────────────── */
+export default function AuditPage() {
+  const [cycles, setCycles]           = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedCycleId, setSelectedCycleId] = useState(null)
 
-/**
- * CloseCycleConfirmDialog
- *
- * Irreversible action warning shown before closing an audit cycle.
- * Closing: locks the cycle + transitions all Missing assets to Lost (server-side, atomic).
- * Show this ALWAYS before calling closeAuditCycle.
- */
-function CloseCycleConfirmDialog({ cycleName, onConfirm, onCancel, closing }) {
+  const selectedCycle = cycles.find(c => c.id === selectedCycleId) ?? null
+
+  const loadCycles = useCallback(async () => {
+    setLoading(true); setError(null)
+    try { const data = await getAuditCycles(); setCycles(data); if (data.length > 0 && !selectedCycleId) setSelectedCycleId(data[0].id) }
+    catch (err) { setError(err.message) }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { loadCycles() }, [loadCycles])
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-sm bg-gray-900 border border-red-500/30 rounded-2xl shadow-2xl shadow-red-500/10">
+    <AppLayout title="Audit">
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: '1.5rem' }}>
+        <div>
+          <h2>Asset Audit</h2>
+          <p>Create and manage audit cycles, verify assets, and generate discrepancy reports.</p>
+        </div>
+        <button className="btn btn-primary" id="btn-create-audit-cycle" onClick={() => setShowCreateModal(true)}>
+          ＋ Create Audit Cycle
+        </button>
+      </div>
 
-        {/* Icon */}
-        <div className="flex justify-center pt-8 pb-4">
-          <div className="w-14 h-14 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
-            <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+      {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error} <button className="btn btn-sm btn-ghost" onClick={loadCycles} style={{ marginLeft: 8 }}>Retry</button></div>}
+
+      {/* Two-panel layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem', alignItems: 'flex-start' }}>
+        {/* Left: Cycle list */}
+        <div>
+          <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.75rem 0.25rem' }}>Audit Cycles</p>
+          {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><div className="spinner" /></div>}
+          {!loading && cycles.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <p>No audit cycles yet. Create one to get started.</p>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {!loading && cycles.map(cycle => (
+              <CycleCard
+                key={cycle.id}
+                cycle={cycle}
+                selected={cycle.id === selectedCycleId}
+                onClick={() => setSelectedCycleId(cycle.id === selectedCycleId ? null : cycle.id)}
+              />
+            ))}
           </div>
         </div>
 
-        <div className="px-6 pb-6 space-y-4 text-center">
-          <div>
-            <h2 className="text-base font-bold text-white">Close Audit Cycle?</h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono">{cycleName}</p>
-          </div>
-
-          <div className="text-left space-y-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-            <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">This action is irreversible</p>
-            <ul className="text-xs text-red-300/80 space-y-1 list-disc list-inside">
-              <li>The cycle will be permanently <strong>locked</strong> — no further edits</li>
-              <li>All <strong>Missing</strong> assets will be marked as <strong>Lost</strong></li>
-              <li>Asset status updates happen atomically in one transaction</li>
-            </ul>
-          </div>
-
-          <p className="text-xs text-gray-500">
-            Make sure all auditors have completed their verification before closing.
-          </p>
-
-          <div className="flex gap-3">
-            <button
-              id="btn-cancel-close-cycle"
-              type="button"
-              onClick={onCancel}
-              disabled={closing}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              id="btn-confirm-close-cycle"
-              type="button"
-              onClick={onConfirm}
-              disabled={closing}
-              className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors"
-            >
-              {closing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Closing…
-                </span>
-              ) : 'Yes, Close Cycle'}
-            </button>
-          </div>
+        {/* Right: Cycle detail */}
+        <div>
+          {!selectedCycle ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 280, border: '2px dashed var(--border)', borderRadius: 12, gap: '0.5rem', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '2.5rem' }}>📋</div>
+              <p style={{ margin: 0, fontWeight: 600 }}>Select an audit cycle</p>
+              <p style={{ margin: 0, fontSize: '0.8rem' }}>or create a new one</p>
+            </div>
+          ) : (
+            <CycleDetail cycle={selectedCycle} onCycleUpdate={loadCycles} />
+          )}
         </div>
       </div>
-    </div>
+
+      {showCreateModal && <CreateAuditCycleModal onClose={() => setShowCreateModal(false)} onSuccess={loadCycles} />}
+    </AppLayout>
   )
 }

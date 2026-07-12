@@ -90,13 +90,33 @@ export default function ActivityLogsPage() {
     },
     {
       key: 'metadata',
-      label: 'Metadata',
+      label: 'Details',
       noSort: true,
-      render: (row) => (
-        <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-          {row.metadata ? JSON.stringify(row.metadata) : 'N/A'}
-        </span>
-      )
+      render: (row) => {
+        if (!row.metadata) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+        if (typeof row.metadata === 'object') {
+          return (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+              {Object.entries(row.metadata).map(([k, v]) => (
+                <span
+                  key={k}
+                  style={{
+                    background: 'var(--bg-hover)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border)'
+                  }}
+                >
+                  <strong style={{ textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}:</strong> {String(v)}
+                </span>
+              ))}
+            </div>
+          );
+        }
+        return <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{String(row.metadata)}</span>;
+      }
     },
     {
       key: 'created_at',

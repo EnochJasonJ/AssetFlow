@@ -9,9 +9,9 @@ export const getNotifications = async (req, res, next) => {
 
     if (!notifications || notifications.length === 0) {
       // Also check for any notifications across all users or generate dynamic notifications from recent allocations/bookings
-      const recentAlloc = await prisma.assetAllocation.findMany({
+      const recentAlloc = await prisma.allocation.findMany({
         take: 3,
-        orderBy: { allocated_at: 'desc' },
+        orderBy: { created_at: 'desc' },
         include: { asset: true }
       });
       const recentBookings = await prisma.resourceBooking.findMany({
@@ -30,7 +30,7 @@ export const getNotifications = async (req, res, next) => {
           related_entity_type: 'asset',
           related_entity_id: al.asset_id,
           read_at: null,
-          created_at: al.allocated_at || new Date()
+          created_at: al.created_at || new Date()
         });
       });
       recentBookings.forEach((b, idx) => {
